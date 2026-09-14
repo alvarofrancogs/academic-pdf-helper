@@ -86,3 +86,25 @@ def test_default_normalizer_cleans_watermarks():
     assert "Reservados todos los derechos" not in text
     cleaned_doc.close()
 
+
+def test_default_normalizer_cleans_preview_watermark_overlay():
+    import pymupdf
+    normalizer = DefaultNormalizer()
+
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((50, 100), "Apuntes originales de Matemáticas Discretas")
+    page.insert_text((250, 360), "Vista previa del documento.\nMostrando 4 páginas de 8")
+
+    raw_bytes = doc.tobytes()
+    doc.close()
+
+    cleaned_bytes = normalizer.normalize(raw_bytes)
+    cleaned_doc = pymupdf.open(stream=cleaned_bytes, filetype="pdf")
+
+    text = cleaned_doc[0].get_text()
+    assert "Apuntes originales de Matemáticas Discretas" in text
+    assert "Vista previa" not in text
+    assert "Mostrando" not in text
+    cleaned_doc.close()
+

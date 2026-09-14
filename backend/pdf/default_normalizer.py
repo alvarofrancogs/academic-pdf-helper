@@ -76,6 +76,58 @@ class DefaultNormalizer:
                     page.apply_redactions()
                     modified = True
 
+            # 2c. Clean Wuolah 'Vista previa del documento / Mostrando X páginas' overlay card
+            has_any_preview_wm = any(
+                any(k in page.get_text().lower() for k in ["vista previa", "mostrando"])
+                for page in doc
+            )
+            if has_any_preview_wm:
+                logger.info("Detectadas marcas de agua 'Vista previa del documento' -> Procediendo a extirparlas.")
+                clean_doc = pymupdf.open()
+                for i, page in enumerate(doc):
+                    text = page.get_text()
+                    has_preview_wm = any(k in text.lower() for k in ["vista previa", "mostrando"])
+                    imgs = page.get_images()
+
+                    is_scanned = False
+                    bg_data = None
+                    if has_preview_wm and len(imgs) >= 2:
+                        max_dim = 0
+                        for img_info in imgs:
+                            base = doc.extract_image(img_info[0])
+                            dim = base["width"] * base["height"]
+                            if dim > max_dim:
+                                max_dim = dim
+                                bg_data = base["image"]
+                        if max_dim > 1500 * 1500:
+                            is_scanned = True
+
+                    if is_scanned and bg_data:
+                        # Scanned notes: preserve the clean full-res handwritten background image
+                        rect = page.rect
+                        new_page = clean_doc.new_page(width=rect.width, height=rect.height)
+                        new_page.insert_image(rect, stream=bg_data)
+                        modified = True
+                    else:
+                        # Digital text document: delete watermark card image and remove text layer without color fill
+                        if has_preview_wm:
+                            for img_info in imgs:
+                                base = doc.extract_image(img_info[0])
+                                if (base["width"], base["height"]) == (657, 239) or (base["width"] < 1000 and base["height"] < 500):
+                                    page.delete_image(img_info[0])
+                                    modified = True
+
+                            for phrase in ["Vista previa", "del documento", "del", "documento", "Mostrando", "páginas de", "paginas de"]:
+                                for rect in page.search_for(phrase):
+                                    page.add_redact_annot(rect, fill=None)
+                            page.apply_redactions(images=0)
+                            modified = True
+
+                        clean_doc.insert_pdf(doc, from_page=i, to_page=i)
+
+                doc.close()
+                doc = clean_doc
+
             if modified:
                 cleaned_bytes = doc.tobytes(garbage=4, deflate=True)
                 doc.close()
