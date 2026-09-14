@@ -14,6 +14,10 @@ class SessionStatusResponse(BaseModel):
     message: str
 
 
+class SessionTokenRequest(BaseModel):
+    token: str = Field(..., description="JWT authentication token from Wuolah session")
+
+
 class ProcessDocumentRequest(BaseModel):
     url: str = Field(..., description="URL of the document on Wuolah (https://wuolah.com/...)")
 

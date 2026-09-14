@@ -257,15 +257,32 @@ class WuolahBrowser:
                 await self._page.evaluate("() => { try { localStorage.clear(); sessionStorage.clear(); } catch(e) {} }")
             except Exception as e:
                 logger.debug(f"Error clearing storage: {e}")
+        token_file = settings.temp_path / "browser_profile" / "session_token.txt"
+        if token_file.exists():
+            try:
+                token_file.unlink()
+            except Exception:
+                pass
+        settings.WUOLAH_TOKEN = None
 
     async def get_auth_token(self) -> Optional[str]:
         """
         Extract active JWT authentication token dynamically from Chromium.
         Checks:
-        1. settings.WUOLAH_TOKEN (manual override if configured)
-        2. Chromium cookies (across Wuolah domains)
-        3. Chromium page localStorage and sessionStorage scanning for valid JWT signatures (eyJ...).
+        1. Saved session_token.txt file
+        2. settings.WUOLAH_TOKEN (manual override if configured)
+        3. Chromium cookies (across Wuolah domains)
+        4. Chromium page localStorage and sessionStorage scanning for valid JWT signatures (eyJ...).
         """
+        token_file = settings.temp_path / "browser_profile" / "session_token.txt"
+        if token_file.exists():
+            try:
+                saved = token_file.read_text(encoding="utf-8").strip()
+                if saved and len(saved) > 20:
+                    return saved
+            except Exception:
+                pass
+
         if settings.WUOLAH_TOKEN:
             return settings.WUOLAH_TOKEN
 

@@ -3,6 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.browser.resource import DocumentResource
+from backend.core.config import settings
 from backend.jobs.manager import job_manager
 from backend.main import app
 
@@ -112,3 +113,26 @@ async def test_end_to_end_job_execution_with_obfuscated_wuolah_resource(sample_o
     assert download_resp.status_code == 200
     assert download_resp.headers["content-type"] == "application/pdf"
     assert download_resp.content == sample_valid_pdf
+
+
+def test_set_session_token_success():
+    resp = client.post("/api/session/token", json={"token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.valid_test_token"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["authenticated"] is True
+    token_file = settings.temp_path / "browser_profile" / "session_token.txt"
+    if token_file.exists():
+        token_file.unlink()
+    settings.WUOLAH_TOKEN = None
+
+
+def test_set_session_token_invalid():
+    resp = client.post("/api/session/token", json={"token": "short"})
+    assert resp.status_code == 400
+
+
+def test_clear_session():
+    resp = client.post("/api/session/clear")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["authenticated"] is False

@@ -158,14 +158,18 @@ Con Docker Desktop no necesitas instalar ni Python ni Node.js en tu equipo.
 
 ## 5. Guía de Uso Paso a Paso
 
-### Paso 1: Inicio de sesión transparente en Chromium
-1. Al abrir `http://localhost:8000`, observa el interruptor superior:
-   - Si está en **OFF (rojo)** con el texto *"Sesión no detectada"*, haz clic en el botón **"Iniciar sesión"**.
-2. Se abrirá una ventana limpia de Chromium navegando a `wuolah.com/login`.
-3. Introduce tus credenciales habituales de Wuolah (correo/contraseña o inicio de sesión con Google).
-4. En cuanto entras, la aplicación detectará las cookies de sesión en tiempo real:
-   - El interruptor cambiará automáticamente a **ON (verde)** con una animación suave.
-   - Puedes cerrar la ventana de Chromium cuando quieras: tu sesión ha quedado guardada de forma segura en `./data/browser_profile`.
+### Paso 1: Conexión de tu sesión de Wuolah (100% Web, Sin Terminales)
+1. Abre la web en tu navegador (`http://localhost:8000`).
+2. Observa el interruptor superior:
+   - Si está en **OFF (rojo)** con el texto *"Sin sesión"*, haz clic en **"Iniciar sesión"** o pulsa sobre el interruptor.
+3. Se abrirá la ventana modal de conexión donde tienes 3 opciones según tu entorno:
+   - **Opción Recomendada (Docker o Servidor - 1 Clic):**
+     1. Haz clic en **"Abrir Wuolah en nueva pestaña"** e inicia sesión con tu cuenta de siempre (Google, email, etc.).
+     2. Arrastra el botón **"⚡ Conectar con Wuolah Helper"** a tu barra de marcadores del navegador (solo se hace una vez).
+     3. Estando en la pestaña de Wuolah, haz clic en ese marcador.
+     4. ¡Listo! La sesión se transferirá al instante a Wuolah PDF Helper, el interruptor se pondrá en **ON (verde)** automáticamente y la ventana se cerrará sola. **Sin tocar ninguna terminal ni instalar extensiones.**
+   - **Pegar Token:** Si prefieres no usar marcadores, copia tu token JWT de Wuolah y pégalo directamente en la pestaña correspondiente.
+   - **Ventana Chromium:** Si ejecutas la aplicación de forma local en tu escritorio con `python run.py`, puedes abrir una ventana de Chromium controlada de forma directa.
 
 ### Paso 2: Procesamiento y Limpieza de un PDF
 1. Ve a cualquier apunte o documento en Wuolah y copia la URL de tu navegador (ejemplo: `https://wuolah.com/apuntes/universidad/...`).

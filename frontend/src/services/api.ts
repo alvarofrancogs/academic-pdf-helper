@@ -68,5 +68,30 @@ export const api = {
   getPreviewUrl(jobId: string): string {
     return `${BASE_URL}/document/download/${jobId}?inline=true`;
   },
+
+  async setSessionToken(token: string): Promise<SessionStatus> {
+    const res = await fetch(`${BASE_URL}/session/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error al vincular el token de sesión.');
+    }
+    return res.json();
+  },
+
+  async clearSession(): Promise<SessionStatus> {
+    const res = await fetch(`${BASE_URL}/session/clear`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Error al cerrar sesión.');
+    }
+    return res.json();
+  },
 };
 

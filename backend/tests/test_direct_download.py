@@ -117,6 +117,12 @@ async def test_download_direct_api_http_error_returns_none():
 
 @pytest.mark.asyncio
 async def test_get_auth_token_from_local_storage():
+    from backend.core.config import settings
+    settings.WUOLAH_TOKEN = None
+    token_file = settings.temp_path / "browser_profile" / "session_token.txt"
+    if token_file.exists():
+        token_file.unlink()
+
     browser = WuolahBrowser(headless=True)
     browser._context = MagicMock()
     browser._page = MagicMock()
@@ -135,6 +141,12 @@ async def test_get_auth_token_from_local_storage():
 
 @pytest.mark.asyncio
 async def test_get_auth_token_from_cookies():
+    from backend.core.config import settings
+    settings.WUOLAH_TOKEN = None
+    token_file = settings.temp_path / "browser_profile" / "session_token.txt"
+    if token_file.exists():
+        token_file.unlink()
+
     browser = WuolahBrowser(headless=True)
     browser._context = MagicMock()
     browser._page = MagicMock()

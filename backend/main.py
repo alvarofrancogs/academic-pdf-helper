@@ -58,6 +58,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def add_private_network_access_header(request, call_next):
+    """
+    Support Chromium's Private Network Access (PNA) specification,
+    allowing requests from https://wuolah.com (bookmarklet) to localhost or internal IPs.
+    """
+    if request.method == "OPTIONS" and request.headers.get("access-control-request-private-network") == "true":
+        from fastapi.responses import Response
+        res = Response(status_code=200)
+        res.headers["Access-Control-Allow-Origin"] = request.headers.get("origin", "*")
+        res.headers["Access-Control-Allow-Methods"] = "*"
+        res.headers["Access-Control-Allow-Headers"] = "*"
+        res.headers["Access-Control-Allow-Credentials"] = "true"
+        res.headers["Access-Control-Allow-Private-Network"] = "true"
+        return res
+    response = await call_next(request)
+    if request.headers.get("access-control-request-private-network") == "true":
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
+
 # Include API router
 app.include_router(api_router, prefix=settings.API_PREFIX)
 

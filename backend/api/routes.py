@@ -10,6 +10,7 @@ from backend.api.schemas import (
     ProcessDocumentRequest,
     ProcessDocumentResponse,
     SessionStatusResponse,
+    SessionTokenRequest,
 )
 from backend.browser.wuolah import WuolahBrowser
 from backend.core.config import settings
@@ -95,6 +96,44 @@ async def switch_session():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al cambiar sesión: {str(e)}",
         )
+
+
+@router.post("/session/token", response_model=SessionStatusResponse)
+async def set_session_token(request: SessionTokenRequest):
+    """
+    Save an active authentication token directly from the web UI or bookmarklet without opening Chromium GUI.
+    """
+    token = request.token.strip()
+    if not token or len(token) < 20:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Token inválido. Debe ser un token JWT válido de Wuolah.",
+        )
+    profile_dir = settings.temp_path / "browser_profile"
+    profile_dir.mkdir(parents=True, exist_ok=True)
+    token_file = profile_dir / "session_token.txt"
+    token_file.write_text(token, encoding="utf-8")
+    settings.WUOLAH_TOKEN = token
+
+    return SessionStatusResponse(
+        authenticated=True,
+        browser_running=True,
+        message="¡Sesión vinculada con éxito!",
+    )
+
+
+@router.post("/session/clear", response_model=SessionStatusResponse)
+async def clear_session():
+    """
+    Clear saved session token and browser cookies cleanly.
+    """
+    browser = get_browser()
+    await browser.clear_session()
+    return SessionStatusResponse(
+        authenticated=False,
+        browser_running=False,
+        message="Sesión cerrada correctamente.",
+    )
 
 
 @router.post("/document/process", response_model=ProcessDocumentResponse)
