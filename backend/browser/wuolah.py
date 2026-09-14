@@ -730,14 +730,27 @@ class WuolahBrowser:
                 logger.debug(f"Error confirmando modal de descarga: {e}")
 
             # Check if clicking download opened an "Inicia sesión" modal
+            # Be strict: only flag login if the modal is PRIMARILY a login form
+            # (has email input AND login button), not just mentions login in passing text
             try:
-                login_required = await self._page.evaluate("""() => {
+                login_check = await self._page.evaluate("""() => {
                     const modal = document.querySelector('.chakra-modal__content-container, [role="dialog"], .modal');
-                    if (!modal) return false;
+                    if (!modal) return { isLogin: false };
                     const text = (modal.innerText || modal.textContent || '').trim();
-                    return text.includes('Inicia sesión') || text.includes('Iniciar sesión') || !!modal.querySelector('input[type="email"]');
+                    const hasEmailInput = !!modal.querySelector('input[type="email"], input[name="email"], input[placeholder*="email" i], input[placeholder*="correo" i]');
+                    const hasPasswordInput = !!modal.querySelector('input[type="password"]');
+                    const hasLoginButton = !!Array.from(modal.querySelectorAll('button, a')).find(b => {
+                        const t = (b.innerText || '').toLowerCase();
+                        return t.includes('iniciar sesión') || t.includes('entrar') || t.includes('log in');
+                    });
+                    // It's a login modal ONLY if it has login form elements, not just text mention
+                    const isLoginForm = hasEmailInput || (hasPasswordInput && hasLoginButton);
+                    // Also check if the ENTIRE modal is basically just a login prompt (short text with login keywords)
+                    const isLoginPrompt = text.length < 200 && (text.includes('Inicia sesión') || text.includes('Iniciar sesión')) && !text.includes('descargar') && !text.includes('anuncio');
+                    return { isLogin: isLoginForm || isLoginPrompt, text: text.substring(0, 200) };
                 }""")
-                if login_required:
+                if login_check and login_check.get("isLogin"):
+                    logger.info(f"Modal de login detectado: '{login_check.get('text', '')[:100]}'")
                     raise WuolahBrowserError(
                         "Para descargar este documento es necesario iniciar sesión en Wuolah. "
                         "Por favor, pulsa en 'Sin sesión' en la barra superior de la aplicación para conectar tu cuenta de Wuolah."
@@ -749,14 +762,33 @@ class WuolahBrowser:
 
         # Wait loop for network interception, handling any ad countdown or subsequent confirmation
         start_wait = asyncio.get_event_loop().time()
+        last_retry_click_time = start_wait
+        last_log_time = start_wait
+        retry_click_interval = 15  # Re-attempt download click every 15s if no resource found
         while asyncio.get_event_loop().time() - start_wait < timeout:
-            # If any new upsell tab opened during wait, close it and bring document page to front
+            elapsed = asyncio.get_event_loop().time() - start_wait
+
+            # If any new tab opened during wait (ads, upsell, etc.), handle it
             if self._context:
                 for p in list(self._context.pages):
-                    if "shop" in p.url.lower() or "suscripciones" in p.url.lower() or "upgrade" in p.url.lower():
+                    if p == self._page:
+                        continue
+                    p_url = p.url.lower()
+                    if "shop" in p_url or "suscripciones" in p_url or "upgrade" in p_url or "about:blank" in p_url:
                         try:
-                            logger.info(f"Cerrando pestaña emergente de suscripción: {p.url[:80]}")
+                            logger.info(f"Cerrando pestaña emergente: {p.url[:80]}")
                             await p.close()
+                        except Exception:
+                            pass
+                    # Check if ad tab opened — wait for it to load then close
+                    elif p_url != "about:blank" and p != self._page:
+                        try:
+                            logger.info(f"Pestaña adicional detectada (posible anuncio): {p.url[:80]}")
+                            await asyncio.sleep(2)
+                            await p.close()
+                            # Bring document page back to front
+                            if self._page and not self._page.is_closed():
+                                await self._page.bring_to_front()
                         except Exception:
                             pass
 
@@ -767,6 +799,11 @@ class WuolahBrowser:
                             r.filename = self._current_doc_metadata.get("name")
                         return r
 
+            # Periodic logging so we know the wait loop is alive
+            if asyncio.get_event_loop().time() - last_log_time > 10:
+                logger.info(f"Esperando recurso de red... ({int(elapsed)}s transcurridos, {len(self._intercepted_resources)} recursos parciales interceptados)")
+                last_log_time = asyncio.get_event_loop().time()
+
             # Check if an ad countdown finished or requires confirmation
             if self._page and not self._page.is_closed():
                 try:
@@ -775,12 +812,15 @@ class WuolahBrowser:
                         const modal = document.querySelector('.chakra-modal__content-container, [role="dialog"], .modal');
                         if (!modal) return { hasModal: false };
                         const text = (modal.innerText || modal.textContent || '').trim();
-                        const isLogin = text.includes('Inicia sesión') || text.includes('Iniciar sesión') || !!modal.querySelector('input[type="email"]');
+                        const hasEmailInput = !!modal.querySelector('input[type="email"], input[name="email"]');
+                        const hasPasswordInput = !!modal.querySelector('input[type="password"]');
+                        const isLoginForm = hasEmailInput || (hasPasswordInput && text.includes('Inicia'));
+                        const isLoginPrompt = text.length < 200 && (text.includes('Inicia sesión') || text.includes('Iniciar sesión')) && !text.includes('descargar') && !text.includes('anuncio');
                         const isRecaptcha = text.toLowerCase().includes('no eres un robot') || !!document.querySelector('iframe[src*="recaptcha"]');
                         return {
                             hasModal: true,
-                            text: text.substring(0, 150),
-                            isLogin: isLogin,
+                            text: text.substring(0, 200),
+                            isLogin: isLoginForm || isLoginPrompt,
                             isRecaptcha: isRecaptcha
                         };
                     }""")
@@ -836,6 +876,29 @@ class WuolahBrowser:
                                 break
                 except Exception:
                     pass
+
+                # Retry download click if no resource intercepted after interval
+                if asyncio.get_event_loop().time() - last_retry_click_time > retry_click_interval:
+                    if not self._intercepted_resources:
+                        logger.info(f"Reintentando clic de descarga tras {int(elapsed)}s sin recurso interceptado...")
+                        try:
+                            retry_result = await self._page.evaluate("""() => {
+                                const elements = Array.from(document.querySelectorAll('button, a, div[role="button"]'));
+                                for (const el of elements) {
+                                    const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
+                                    if (txt.includes('sin publi') || txt.includes('turbo') || txt.includes('pro') || txt.includes('suscrip') || (txt.includes('coin') && !txt.includes('0'))) continue;
+                                    if (txt.includes('con publi') || txt.includes('gratis') || txt.includes('descargar') || txt.includes('continuar') || txt.includes('saltar')) {
+                                        el.click();
+                                        return { clicked: true, text: txt };
+                                    }
+                                }
+                                return { clicked: false };
+                            }""")
+                            if retry_result and retry_result.get("clicked"):
+                                logger.info(f"Reintento de clic exitoso: '{retry_result.get('text')}'")
+                        except Exception:
+                            pass
+                    last_retry_click_time = asyncio.get_event_loop().time()
 
             await asyncio.sleep(1.0)
 
@@ -903,7 +966,11 @@ class WuolahBrowser:
             )
 
             if resp.status != 200:
-                logger.debug(f"API /v2/download respondió con status {resp.status}")
+                try:
+                    error_body = await resp.text()
+                    logger.info(f"API /v2/download respondió con status {resp.status}: {error_body[:200]}")
+                except Exception:
+                    logger.info(f"API /v2/download respondió con status {resp.status}")
                 return None
 
             data = await resp.json()
