@@ -37,36 +37,30 @@ export const LoginStatus: React.FC<Props> = ({ session, onSessionUpdated }) => {
     <>
       <div className="flex items-center justify-between py-3.5 px-4 mb-6 bg-white border border-border rounded-card">
         <div className="flex items-center gap-3.5">
-          {/* Switch automático indicador de estado (Verde ON / Rojo OFF) */}
+          {/* Indicador de estado */}
           <button
             type="button"
             onClick={() => {
               if (!isAuthenticated) handleOpenLogin();
             }}
-            title={isAuthenticated ? 'Sesión activa (ON)' : 'Sin sesión (haz clic para conectar)'}
-            className={`relative inline-flex h-6 w-12 shrink-0 items-center rounded-full transition-colors duration-300 ease-in-out cursor-pointer ${
-              isAuthenticated ? 'bg-emerald-500' : 'bg-rose-500'
+            title={isAuthenticated ? 'Sesión activa' : 'Sin sesión (haz clic para conectar)'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+              isAuthenticated
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 cursor-pointer'
             }`}
           >
-            <span
-              className={`flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-md ring-0 transition-transform duration-300 ease-in-out ${
-                isAuthenticated ? 'translate-x-6' : 'translate-x-0.5'
-              }`}
-            >
-              {loading ? (
-                <i className="bi bi-arrow-repeat animate-spin text-[10px] text-ink font-bold" />
-              ) : isAuthenticated ? (
-                <i className="bi bi-check text-[13px] text-emerald-600 font-bold leading-none" />
-              ) : (
-                <i className="bi bi-x text-[13px] text-rose-600 font-bold leading-none" />
-              )}
-            </span>
+            {loading ? (
+              <i className="bi bi-arrow-repeat animate-spin text-xs" />
+            ) : isAuthenticated ? (
+              <i className="bi bi-shield-check text-emerald-600 text-xs" />
+            ) : (
+              <i className="bi bi-shield-x text-rose-600 text-xs" />
+            )}
+            <span>{isAuthenticated ? 'Sesión activa' : 'Sin sesión'}</span>
           </button>
 
           <div>
-            <p className="text-sm font-semibold text-ink">
-              {isAuthenticated ? 'Sesión activa' : 'Sin sesión'}
-            </p>
             <p className="text-xs text-muted">
               {isAuthenticated
                 ? 'Descarga directa autorizada.'

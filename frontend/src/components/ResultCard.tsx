@@ -26,11 +26,11 @@ export const ResultCard: React.FC<Props> = ({ job, onReset, onPreview }) => {
     <div className="bg-white border border-border rounded-card p-6 mt-6">
       {/* Success header */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-          <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+            <i className="bi bi-check2 text-xs" />
             Documento listo
-          </p>
+          </span>
         </div>
         <h2 className="text-xl font-extrabold text-ink tracking-tight truncate">
           {filename}

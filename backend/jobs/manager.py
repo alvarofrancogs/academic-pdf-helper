@@ -47,6 +47,22 @@ class JobManager:
         if job_dir.exists():
             shutil.rmtree(job_dir, ignore_errors=True)
 
+    def _save_job_to_disk(self, job: Dict[str, Any]) -> None:
+        """Persist job record to disk so history survives server restarts."""
+        try:
+            import json
+            job_id = job["job_id"]
+            job_dir = self.get_job_dir(job_id)
+            meta_file = job_dir / "job.json"
+            to_save = dict(job)
+            if isinstance(to_save.get("created_at"), datetime):
+                to_save["created_at"] = to_save["created_at"].isoformat()
+            if isinstance(to_save.get("updated_at"), datetime):
+                to_save["updated_at"] = to_save["updated_at"].isoformat()
+            meta_file.write_text(json.dumps(to_save, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception as e:
+            logger.debug(f"Error saving job {job.get('job_id')} to disk: {e}")
+
     async def create_job(self, url: str) -> Dict[str, Any]:
         async with self._lock:
             job_id = uuid.uuid4().hex[:12]
@@ -64,11 +80,57 @@ class JobManager:
                 "updated_at": datetime.now(timezone.utc),
             }
             self._jobs[job_id] = job_data
+            self._save_job_to_disk(job_data)
             return job_data
 
     async def get_job(self, job_id: str) -> Optional[Dict[str, Any]]:
         async with self._lock:
-            return self._jobs.get(job_id)
+            job = self._jobs.get(job_id)
+            if job:
+                return job
+
+            # Check if job exists on disk
+            job_dir = settings.temp_path / job_id
+            if not job_dir.exists():
+                return None
+
+            # Try loading saved job.json
+            meta_file = job_dir / "job.json"
+            if meta_file.exists():
+                try:
+                    import json
+                    data = json.loads(meta_file.read_text(encoding="utf-8"))
+                    self._jobs[job_id] = data
+                    return data
+                except Exception as e:
+                    logger.debug(f"Error reading job.json for {job_id}: {e}")
+
+            # Fallback: check for any .pdf file in job_dir
+            pdf_files = list(job_dir.glob("*.pdf"))
+            if pdf_files:
+                pdf_file = pdf_files[0]
+                stat = pdf_file.stat()
+                job_data = {
+                    "job_id": job_id,
+                    "url": "",
+                    "status": JobStatus.READY,
+                    "progress": 100,
+                    "message": "PDF preparado correctamente",
+                    "result_path": str(pdf_file),
+                    "filename": pdf_file.name,
+                    "result_metadata": {
+                        "pages": 1,
+                        "size_bytes": stat.st_size,
+                        "size_formatted": f"{stat.st_size / 1024:.2f} KB",
+                    },
+                    "error": None,
+                    "created_at": datetime.fromtimestamp(stat.st_ctime, tz=timezone.utc),
+                    "updated_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc),
+                }
+                self._jobs[job_id] = job_data
+                return job_data
+
+            return None
 
     async def update_job(
         self,
@@ -83,6 +145,8 @@ class JobManager:
     ) -> Optional[Dict[str, Any]]:
         async with self._lock:
             job = self._jobs.get(job_id)
+            if not job:
+                job = await self.get_job(job_id)
             if not job:
                 return None
             if status is not None:
@@ -100,6 +164,7 @@ class JobManager:
             if error is not None:
                 job["error"] = error
             job["updated_at"] = datetime.now(timezone.utc)
+            self._save_job_to_disk(job)
             return job
 
     async def cleanup_expired_jobs(self) -> None:

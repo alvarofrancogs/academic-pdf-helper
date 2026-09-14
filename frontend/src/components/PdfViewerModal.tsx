@@ -58,7 +58,7 @@ export const PdfViewerModal: React.FC<Props> = ({
             </a>
             <button
               onClick={onClose}
-              className="p-1.5 text-muted hover:text-ink transition-colors rounded-full hover:bg-surface"
+              className="p-1.5 text-muted hover:text-ink transition-colors rounded-lg hover:bg-surface"
               title="Cerrar (Esc)"
             >
               <i className="bi bi-x-lg text-sm" />

@@ -64,8 +64,8 @@ export const ProgressCard: React.FC<Props> = ({ job }) => {
                 done ? 'text-ink font-medium' : active ? 'text-accent font-semibold' : 'text-muted/50'
               }`}
             >
-              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                done ? 'bg-green-500' : active ? 'bg-accent' : 'bg-border'
+              <i className={`bi text-xs shrink-0 ${
+                done ? 'bi-check2 text-emerald-600 font-bold' : active ? 'bi-arrow-repeat animate-spin text-accent' : 'bi-dash text-muted/30'
               }`} />
               <span>{step.label}</span>
             </div>

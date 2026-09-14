@@ -196,28 +196,36 @@ async def get_document_status(job_id: str):
 async def download_document(job_id: str, inline: bool = False):
     """Download or preview the finalized, validated PDF file."""
     job = await job_manager.get_job(job_id)
-    if not job:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Trabajo '{job_id}' no encontrado.",
-        )
+    result_path = None
+    filename = "documento_wuolah.pdf"
 
-    if job["status"] != "ready":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El archivo todavía no está listo para su descarga.",
-        )
+    if job:
+        result_path = job.get("result_path")
+        filename = job.get("filename") or filename
+        if job.get("status") not in ("ready", None):
+            job_dir = settings.temp_path / job_id
+            if not (job_dir.exists() and list(job_dir.glob("*.pdf"))):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El archivo todavía no está listo para su descarga.",
+                )
 
-    result_path = job.get("result_path")
+    # Robust fallback: check disk directly in case memory was reset
+    if not result_path or not os.path.exists(result_path):
+        job_dir = settings.temp_path / job_id
+        if job_dir.exists():
+            pdf_files = list(job_dir.glob("*.pdf"))
+            if pdf_files:
+                result_path = str(pdf_files[0])
+                filename = pdf_files[0].name
+
     if not result_path or not os.path.exists(result_path):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="El archivo resultante no se encuentra disponible en el almacenamiento temporal.",
+            detail=f"Trabajo '{job_id}' no encontrado o archivo no disponible.",
         )
 
-    filename = job.get("filename") or "documento_wuolah.pdf"
     disposition = "inline" if inline else "attachment"
-
     return FileResponse(
         path=result_path,
         media_type="application/pdf",
