@@ -1,0 +1,56 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.token
+*.key
+*.pem
+
+# Local Data & Sessions
+data/
+artifacts/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# Temporary files & artifacts
+/tmp/
+*.bin
+*.pdf
+*.trace
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
