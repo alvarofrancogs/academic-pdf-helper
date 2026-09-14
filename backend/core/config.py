@@ -30,10 +30,10 @@ class Settings(BaseModel):
         default_factory=lambda: os.getenv("BROWSER_HEADLESS", "false").lower() in ("true", "1", "yes")
     )
     BROWSER_TIMEOUT_SECONDS: int = Field(
-        default_factory=lambda: int(os.getenv("BROWSER_TIMEOUT_SECONDS", "90"))
+        default_factory=lambda: int(os.getenv("BROWSER_TIMEOUT_SECONDS", "120"))
     )
     DOWNLOAD_TIMEOUT_SECONDS: int = Field(
-        default_factory=lambda: int(os.getenv("DOWNLOAD_TIMEOUT_SECONDS", "60"))
+        default_factory=lambda: int(os.getenv("DOWNLOAD_TIMEOUT_SECONDS", "120"))
     )
     
     # Security

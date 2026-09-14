@@ -12,8 +12,8 @@ services:
       - MAX_PDF_SIZE_MB=100
       - JOB_TTL_MINUTES=30
       - TEMP_DIR=/tmp/wuolah-pdf
-      - BROWSER_TIMEOUT_SECONDS=90
-      - DOWNLOAD_TIMEOUT_SECONDS=60
+      - BROWSER_TIMEOUT_SECONDS=150
+      - DOWNLOAD_TIMEOUT_SECONDS=120
     volumes:
       - ./data:/tmp/wuolah-pdf
     restart: unless-stopped

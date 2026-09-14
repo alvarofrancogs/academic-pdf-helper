@@ -5,7 +5,7 @@ import json
 import logging
 import re
 import urllib.request
-from typing import List, Optional
+from typing import List, Optional, Callable, Any
 from urllib.parse import urlparse
 
 import pypdf
@@ -595,7 +595,11 @@ class WuolahBrowser:
         except Exception:
             return False
 
-    async def find_document_resource(self, timeout_seconds: Optional[int] = None) -> DocumentResource:
+    async def find_document_resource(
+        self,
+        timeout_seconds: Optional[int] = None,
+        on_status_update: Optional[Callable[[str], Any]] = None,
+    ) -> DocumentResource:
         """
         Locate and return the captured document resource from network traffic.
         Attempts instant authorized API download first (~1s); if not possible, falls back to DOM clicking.
@@ -745,15 +749,48 @@ class WuolahBrowser:
                             r.filename = self._current_doc_metadata.get("name")
                         return r
 
-            # Check if an ad countdown finished and revealed a final download button
+            # Check if an ad countdown finished or requires confirmation
             if self._page and not self._page.is_closed():
+                try:
+                    # Check modal text for countdown timer or reCAPTCHA
+                    modal_state = await self._page.evaluate("""() => {
+                        const modal = document.querySelector('.chakra-modal__content-container, [role="dialog"], .modal');
+                        if (!modal) return { hasModal: false };
+                        const text = (modal.innerText || modal.textContent || '').trim();
+                        const isRecaptcha = text.toLowerCase().includes('no eres un robot') || !!document.querySelector('iframe[src*="recaptcha"]');
+                        return {
+                            hasModal: true,
+                            text: text.substring(0, 150),
+                            isRecaptcha: isRecaptcha
+                        };
+                    }""")
+                    if modal_state and modal_state.get("hasModal"):
+                        if modal_state.get("isRecaptcha"):
+                            if on_status_update:
+                                await on_status_update("Wuolah solicita verificación reCAPTCHA para la descarga...")
+                        else:
+                            txt = modal_state.get("text", "")
+                            match = re.search(r'(\d+)\s*(?:s(?:eg(?:undos?)?)?)\b', txt, re.IGNORECASE)
+                            if match and on_status_update:
+                                await on_status_update(f"Esperando anuncio de Wuolah ({match.group(1)}s restantes)...")
+                except Exception:
+                    pass
+
                 try:
                     await self._page.evaluate("""() => {
                         const elements = Array.from(document.querySelectorAll('.chakra-modal__content-container button, [role="dialog"] button, button, a'));
                         for (const el of elements) {
                             if (el.disabled || el.getAttribute('aria-disabled') === 'true') continue;
                             const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
-                            if (txt === 'descargar' || txt.includes('descargar ahora') || txt.includes('saltar y descargar') || txt.includes('descargar archivo')) {
+                            // Strictly exclude paid / upsell options
+                            if (txt.includes('sin publi') || txt.includes('sin publicidad') || txt.includes('sin anuncios') ||
+                                txt.includes('turbo') || txt.includes('pro') || txt.includes('suscrip') || 
+                                (txt.includes('coin') && !txt.includes('0'))) {
+                                continue;
+                            }
+                            if (txt === 'descargar' || txt.includes('descargar ahora') || txt.includes('saltar y descargar') || 
+                                txt.includes('descargar archivo') || txt === 'continuar' || txt.includes('continuar') || 
+                                txt === 'saltar' || txt.includes('saltar')) {
                                 el.click();
                                 break;
                             }

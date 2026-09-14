@@ -284,7 +284,10 @@ class JobManager:
                 progress=50,
                 message="Identificando recurso del documento...",
             )
-            resource = await browser.find_document_resource()
+            async def handle_status_update(msg: str) -> None:
+                await self.update_job(job_id, message=msg)
+
+            resource = await browser.find_document_resource(on_status_update=handle_status_update)
 
             # 5. Downloading bytes
             await self.update_job(
