@@ -183,9 +183,9 @@ async def get_document_status(job_id: str):
 
     return JobStatusResponse(
         job_id=job["job_id"],
-        status=job["status"],
-        progress=job["progress"],
-        message=job["message"],
+        status=job.get("status", "queued"),
+        progress=job.get("progress", 0),
+        message=job.get("message", ""),
         filename=job.get("filename"),
         result_metadata=job.get("result_metadata"),
         error=job.get("error"),

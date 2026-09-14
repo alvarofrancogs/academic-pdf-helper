@@ -83,6 +83,29 @@ class JobManager:
             self._save_job_to_disk(job_data)
             return job_data
 
+    @staticmethod
+    def _parse_datetime(val: Any) -> Optional[datetime]:
+        """Safely parse a datetime object, ISO formatted string, or timestamp."""
+        if isinstance(val, datetime):
+            if val.tzinfo is None:
+                return val.replace(tzinfo=timezone.utc)
+            return val
+        if isinstance(val, str):
+            try:
+                clean_val = val[:-1] + "+00:00" if val.endswith("Z") else val
+                dt = datetime.fromisoformat(clean_val)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                return dt
+            except Exception:
+                return None
+        if isinstance(val, (int, float)):
+            try:
+                return datetime.fromtimestamp(val, tz=timezone.utc)
+            except Exception:
+                return None
+        return None
+
     async def get_job(self, job_id: str) -> Optional[Dict[str, Any]]:
         async with self._lock:
             job = self._jobs.get(job_id)
@@ -100,6 +123,8 @@ class JobManager:
                 try:
                     import json
                     data = json.loads(meta_file.read_text(encoding="utf-8"))
+                    data["created_at"] = self._parse_datetime(data.get("created_at")) or datetime.now(timezone.utc)
+                    data["updated_at"] = self._parse_datetime(data.get("updated_at")) or datetime.now(timezone.utc)
                     self._jobs[job_id] = data
                     return data
                 except Exception as e:
@@ -172,14 +197,44 @@ class JobManager:
         async with self._lock:
             now = datetime.now(timezone.utc)
             ttl = timedelta(minutes=settings.JOB_TTL_MINUTES)
-            expired_ids = [
-                jid for jid, j in self._jobs.items()
-                if (now - j["created_at"]) > ttl
-            ]
+            expired_ids = []
+            for jid, j in list(self._jobs.items()):
+                created_at = self._parse_datetime(j.get("created_at"))
+                if created_at is None or (now - created_at) > ttl:
+                    expired_ids.append(jid)
+
             for jid in expired_ids:
                 logger.info(f"Purging expired job {jid}")
                 self.cleanup_job_dir(jid)
-                del self._jobs[jid]
+                self._jobs.pop(jid, None)
+
+            # Also clean up expired job directories on disk that may not be in memory
+            try:
+                if settings.temp_path.exists():
+                    for item in settings.temp_path.iterdir():
+                        if not item.is_dir() or item.name == "browser_profile":
+                            continue
+                        meta_file = item / "job.json"
+                        dir_created_at = None
+                        if meta_file.exists():
+                            try:
+                                import json
+                                meta = json.loads(meta_file.read_text(encoding="utf-8"))
+                                dir_created_at = self._parse_datetime(meta.get("created_at"))
+                            except Exception:
+                                pass
+                        if dir_created_at is None:
+                            try:
+                                stat = item.stat()
+                                dir_created_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc)
+                            except Exception:
+                                pass
+                        if dir_created_at and (now - dir_created_at) > ttl:
+                            logger.info(f"Purging expired job directory from disk: {item.name}")
+                            shutil.rmtree(item, ignore_errors=True)
+                            self._jobs.pop(item.name, None)
+            except Exception as e:
+                logger.debug(f"Error during disk cleanup of expired jobs: {e}")
 
     async def run_document_pipeline(
         self,

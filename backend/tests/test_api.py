@@ -136,3 +136,74 @@ def test_clear_session():
     assert resp.status_code == 200
     data = resp.json()
     assert data["authenticated"] is False
+
+
+@pytest.mark.asyncio
+async def test_cleanup_expired_jobs_with_string_and_various_created_at():
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    old_time = (now - timedelta(hours=2)).isoformat()
+    recent_time = (now - timedelta(minutes=5)).isoformat()
+
+    # Seed job_manager with string timestamps as would be loaded from disk
+    job_manager._jobs["expired_str_job"] = {
+        "job_id": "expired_str_job",
+        "status": "ready",
+        "created_at": old_time,
+        "updated_at": old_time,
+    }
+    job_manager._jobs["recent_str_job"] = {
+        "job_id": "recent_str_job",
+        "status": "ready",
+        "created_at": recent_time,
+        "updated_at": recent_time,
+    }
+    job_manager._jobs["zulu_job"] = {
+        "job_id": "zulu_job",
+        "status": "ready",
+        "created_at": "2026-09-14T20:00:00Z",
+        "updated_at": "2026-09-14T20:00:00Z",
+    }
+
+    # Must not raise TypeError: unsupported operand type(s) for -: 'datetime.datetime' and 'str'
+    await job_manager.cleanup_expired_jobs()
+
+    assert "expired_str_job" not in job_manager._jobs
+    assert "recent_str_job" in job_manager._jobs
+    # Clean up
+    job_manager._jobs.pop("recent_str_job", None)
+
+
+def test_process_document_after_loading_job_from_disk(tmp_path):
+    import json
+
+    # Create a dummy job directory and job.json
+    job_id = "test_disk_job"
+    job_dir = settings.temp_path / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
+    job_file = job_dir / "job.json"
+    job_file.write_text(
+        json.dumps({
+            "job_id": job_id,
+            "url": "https://wuolah.com/test",
+            "status": "ready",
+            "created_at": "2026-09-14T22:00:00+00:00",
+            "updated_at": "2026-09-14T22:05:00+00:00",
+        })
+    )
+
+    # Force job_manager to load it
+    with patch.object(job_manager, "run_document_pipeline", new=AsyncMock()):
+        # Retrieve status, which populates _jobs from disk
+        resp_status = client.get(f"/api/document/status/{job_id}")
+        assert resp_status.status_code == 200
+
+        # Now trigger process_document, which calls cleanup_expired_jobs()
+        resp_process = client.post(
+            "/api/document/process",
+            json={"url": "https://wuolah.com/document/nuevo-documento-999"},
+        )
+        assert resp_process.status_code == 200
+        assert resp_process.json()["status"] == "queued"
+
