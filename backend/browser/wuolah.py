@@ -217,6 +217,19 @@ class WuolahBrowser:
 
     async def open_login(self) -> None:
         """Open Wuolah login page in visible browser for interactive user login."""
+        import sys
+        import os
+
+        # Check if running in a headless environment without an X server (such as a Docker container)
+        is_headless_env = settings.BROWSER_HEADLESS or (sys.platform != "win32" and not os.environ.get("DISPLAY"))
+        if is_headless_env:
+            raise WuolahBrowserError(
+                "Estás ejecutando la aplicación dentro de un contenedor Docker (sin entorno gráfico). "
+                "Para iniciar sesión con Chromium la primera vez: para el contenedor en Docker Desktop, "
+                "ejecuta 'python run.py' en tu ordenador para abrir la ventana de Chromium en tu pantalla, "
+                "y una vez iniciada la sesión, vuelve a arrancar Docker Desktop."
+            )
+
         if self._context is not None and self.headless:
             await self.close()
 
