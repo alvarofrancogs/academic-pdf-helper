@@ -339,13 +339,14 @@ class JobManager:
                 filename=final_filename,
                 result_metadata={
                     "pages": pipeline_result["pages"],
+                    "expected_pages": getattr(browser, "_expected_pages", None),
                     "size_bytes": pipeline_result["size_bytes"],
                     "size_formatted": pipeline_result["size_formatted"],
                     "pdf_version": pipeline_result["pdf_version"],
                     "detected_type": pipeline_result["detected_type"],
                 },
             )
-            logger.info(f"Job {job_id} successfully completed: {final_filename}")
+            logger.info(f"Job {job_id} successfully completed: {final_filename} ({pipeline_result['pages']} págs)")
 
         except Exception as e:
             logger.exception(f"Error processing job {job_id}: {e}")

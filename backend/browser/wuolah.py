@@ -1,10 +1,14 @@
 import asyncio
+import base64
+import io
 import json
 import logging
 import re
+import urllib.request
 from typing import List, Optional
 from urllib.parse import urlparse
 
+import pypdf
 from playwright.async_api import Browser, BrowserContext, Page, Response, async_playwright, Playwright
 
 from backend.browser.resource import DocumentResource
@@ -34,6 +38,8 @@ class WuolahBrowser:
         self._intercepted_resources: List[DocumentResource] = []
         self._resource_event: asyncio.Event = asyncio.Event()
         self._current_doc_url: Optional[str] = None
+        self._current_doc_metadata: dict = {}
+        self._expected_pages: Optional[int] = None
 
     async def start(self) -> None:
         """Launch Chromium and configure persistent browser context for session retention."""
@@ -95,6 +101,24 @@ class WuolahBrowser:
                     viewport={"width": 1280, "height": 800} if self.headless else None,
                     args=launch_args,
                 )
+
+            await self._context.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+                if (navigator.userAgentData) {
+                    Object.defineProperty(navigator, 'userAgentData', {
+                        get: () => ({
+                            brands: [
+                                {brand: 'Google Chrome', version: '128'},
+                                {brand: 'Chromium', version: '128'},
+                                {brand: 'Not=A?Brand', version: '24'}
+                            ],
+                            mobile: false,
+                            platform: 'Windows'
+                        })
+                    });
+                }
+            """)
+            await self._inject_auth_cookies()
 
             self._context.on("page", self._attach_listeners)
             for p in self._context.pages:
@@ -164,6 +188,15 @@ class WuolahBrowser:
             if lower_url.endswith((".ttf", ".woff", ".woff2", ".otf", ".eot", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".css", ".js", ".m3u8", ".ts")):
                 return
 
+            # Explicitly ignore preview PDFs (Wuolah truncates previews to 6 pages)
+            if "preview.pdf" in lower_url or "/previews/" in lower_url:
+                logger.debug(f"Descartando vista previa parcial de documento: {url[:80]}")
+                return
+
+            # Ignore tracking beacons and conversions
+            if any(ad_d in lower_url for ad_d in ["googleadservices", "doubleclick", "analytics", "froged", "criteo", "pubmatic"]):
+                return
+
             if is_pdf_content or is_pdf_extension or is_cdn_document:
                 try:
                     data = await response.body()
@@ -210,10 +243,136 @@ class WuolahBrowser:
                     data=data,
                     filename=download.suggested_filename,
                 )
-                self._intercepted_resources.append(resource)
-                self._resource_event.set()
+                if self._is_valid_complete_resource(resource):
+                    self._intercepted_resources.append(resource)
+                    self._resource_event.set()
         except Exception as e:
             logger.debug(f"Error handling download event: {e}")
+
+    async def _inject_auth_cookies(self) -> None:
+        """Inject authentication cookies into Chromium context if a session token is available."""
+        if not self._context:
+            return
+        try:
+            token = await self.get_auth_token()
+            if not token:
+                return
+
+            user_id = None
+            try:
+                parts = token.split(".")
+                if len(parts) >= 2:
+                    padded = parts[1] + "=" * ((4 - len(parts[1]) % 4) % 4)
+                    payload = json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
+                    if payload.get("id"):
+                        user_id = str(payload["id"])
+            except Exception:
+                pass
+
+            cookies_to_add = [
+                {
+                    "name": "token",
+                    "value": token,
+                    "domain": ".wuolah.com",
+                    "path": "/",
+                    "secure": True,
+                    "sameSite": "Lax",
+                },
+                {
+                    "name": "refreshToken",
+                    "value": token,
+                    "domain": ".wuolah.com",
+                    "path": "/",
+                    "secure": True,
+                    "sameSite": "Lax",
+                },
+            ]
+            if user_id:
+                cookies_to_add.append({
+                    "name": "user_id",
+                    "value": user_id,
+                    "domain": ".wuolah.com",
+                    "path": "/",
+                    "secure": True,
+                    "sameSite": "Lax",
+                })
+
+            await self._context.add_cookies(cookies_to_add)
+            logger.info(f"Cookies de sesión de Wuolah inyectadas en Chromium (user_id={user_id}).")
+        except Exception as e:
+            logger.debug(f"Error inyectando cookies de autenticación: {e}")
+
+    async def fetch_document_metadata(self, file_id: int) -> dict:
+        """Fetch official document metadata (e.g. numPages, name, size) from Wuolah API."""
+        token = await self.get_auth_token()
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/128.0.0.0 Safari/537.36"
+            ),
+            "Accept": "application/json",
+        }
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        try:
+            if self._page and not self._page.is_closed():
+                resp = await self._page.request.get(f"https://api.wuolah.com/v2/documents/{file_id}", headers=headers)
+                if resp.ok:
+                    data = await resp.json()
+                    logger.info(f"Metadatos oficiales obtenidos: '{data.get('name')}' ({data.get('numPages')} págs, {data.get('size')} bytes)")
+                    return data
+        except Exception as e:
+            logger.debug(f"Error consultando metadatos via page request: {e}")
+
+        try:
+            req = urllib.request.Request(f"https://api.wuolah.com/v2/documents/{file_id}", headers=headers)
+            with urllib.request.urlopen(req, timeout=10) as response:
+                if response.status == 200:
+                    data = json.loads(response.read().decode("utf-8"))
+                    logger.info(f"Metadatos oficiales obtenidos (fallback): '{data.get('name')}' ({data.get('numPages')} págs)")
+                    return data
+        except Exception as e:
+            logger.debug(f"Error consultando metadatos via urllib: {e}")
+
+        return {}
+
+    def _is_valid_complete_resource(self, resource: DocumentResource) -> bool:
+        """Check if intercepted resource is a valid PDF and not an incomplete preview."""
+        if not resource or not resource.data:
+            return False
+
+        # Ignore preview URLs and filenames
+        if "preview" in resource.url.lower():
+            return False
+        if resource.filename and "preview" in resource.filename.lower():
+            return False
+
+        data = resource.data
+        is_pdf_magic = data.startswith(b"%PDF")
+        is_xor_magic = len(data) >= 4 and bytes([b ^ 27 for b in data[:4]]) == b"%PDF"
+        if not (is_pdf_magic or is_xor_magic):
+            return False
+
+        # If expected_pages is known and > 6, verify page count
+        if self._expected_pages and self._expected_pages > 6:
+            try:
+                pdf_data = data
+                if is_xor_magic:
+                    pdf_data = bytes([b ^ 27 for b in data[:4]]) + data[4:]
+                reader = pypdf.PdfReader(io.BytesIO(pdf_data))
+                page_count = len(reader.pages)
+                if page_count <= 6 and self._expected_pages > 6:
+                    logger.warning(
+                        f"Recurso interceptado ({resource.url[:60]}) tiene {page_count} páginas, "
+                        f"pero el documento oficial tiene {self._expected_pages}. Descartando por ser vista previa incompleta."
+                    )
+                    return False
+            except Exception as e:
+                logger.debug(f"No se pudo verificar páginas del recurso: {e}")
+
+        return True
 
     async def open_login(self) -> None:
         """Open Wuolah login page in visible browser for interactive user login."""
@@ -374,15 +533,21 @@ class WuolahBrowser:
 
     async def _dismiss_cookie_banners(self) -> None:
         """Dismiss common cookie banners if present."""
-        if not self._page:
+        if not self._page or self._page.is_closed():
             return
         cookie_selectors = [
+            ".fc-consent-root button.fc-cta-consent",
+            ".fc-consent-root .fc-primary-button",
+            "button.fc-cta-consent",
             "#onetrust-accept-btn-handler",
+            "button:has-text('Consentir')",
             "button:has-text('Aceptar todas')",
             "button:has-text('Aceptar todo')",
             "button:has-text('Aceptar y continuar')",
+            "button:has-text('Acepto')",
             "button:has-text('Aceptar')",
             "[aria-label*='Aceptar']",
+            "[aria-label*='Consentir']",
         ]
         for sel in cookie_selectors:
             try:
@@ -404,6 +569,18 @@ class WuolahBrowser:
 
         self._intercepted_resources.clear()
         self._resource_event.clear()
+
+        # Query official document metadata (numPages, name) ahead of time
+        file_id = extract_wuolah_file_id(validated_url)
+        if file_id:
+            try:
+                self._current_doc_metadata = await self.fetch_document_metadata(file_id)
+                self._expected_pages = self._current_doc_metadata.get("numPages")
+            except Exception as e:
+                logger.debug(f"Error al obtener metadatos para file_id {file_id}: {e}")
+
+        # Ensure active session cookies are injected before navigating
+        await self._inject_auth_cookies()
 
         await self._page.goto(validated_url, wait_until="domcontentloaded", timeout=settings.BROWSER_TIMEOUT_SECONDS * 1000)
         await self._dismiss_cookie_banners()
@@ -427,7 +604,9 @@ class WuolahBrowser:
 
         # Check if already intercepted a valid PDF
         for r in self._intercepted_resources:
-            if r.data.startswith(b"%PDF") or (len(r.data) >= 4 and bytes([b ^ 27 for b in r.data[:4]]) == b"%PDF"):
+            if self._is_valid_complete_resource(r):
+                if not r.filename and self._current_doc_metadata.get("name"):
+                    r.filename = self._current_doc_metadata.get("name")
                 return r
 
         # Fast-Path: Try instant authorized API download without waiting for ad countdowns
@@ -561,18 +740,20 @@ class WuolahBrowser:
 
             if self._intercepted_resources:
                 for r in self._intercepted_resources:
-                    if r.data.startswith(b"%PDF") or (len(r.data) >= 4 and bytes([b ^ 27 for b in r.data[:4]]) == b"%PDF"):
+                    if self._is_valid_complete_resource(r):
+                        if not r.filename and self._current_doc_metadata.get("name"):
+                            r.filename = self._current_doc_metadata.get("name")
                         return r
-                return self._intercepted_resources[-1]
 
             # Check if an ad countdown finished and revealed a final download button
             if self._page and not self._page.is_closed():
                 try:
                     await self._page.evaluate("""() => {
-                        const elements = Array.from(document.querySelectorAll('button, a'));
+                        const elements = Array.from(document.querySelectorAll('.chakra-modal__content-container button, [role="dialog"] button, button, a'));
                         for (const el of elements) {
+                            if (el.disabled || el.getAttribute('aria-disabled') === 'true') continue;
                             const txt = (el.innerText || el.textContent || '').trim().toLowerCase();
-                            if (txt.includes('descargar ahora') || txt.includes('saltar y descargar') || txt.includes('descargar archivo')) {
+                            if (txt === 'descargar' || txt.includes('descargar ahora') || txt.includes('saltar y descargar') || txt.includes('descargar archivo')) {
                                 el.click();
                                 break;
                             }
@@ -581,13 +762,25 @@ class WuolahBrowser:
                 except Exception:
                     pass
 
+                # If reCAPTCHA modal appears, attempt to click the anchor
+                try:
+                    for f in self._page.frames:
+                        if "recaptcha" in f.url and "anchor" in f.url:
+                            anchor = f.locator("#recaptcha-anchor")
+                            if await anchor.count() > 0 and await anchor.is_visible():
+                                await anchor.click(timeout=1000)
+                                break
+                except Exception:
+                    pass
+
             await asyncio.sleep(1.0)
 
         if self._intercepted_resources:
             for r in self._intercepted_resources:
-                if r.data.startswith(b"%PDF") or (len(r.data) >= 4 and bytes([b ^ 27 for b in r.data[:4]]) == b"%PDF"):
+                if self._is_valid_complete_resource(r):
+                    if not r.filename and self._current_doc_metadata.get("name"):
+                        r.filename = self._current_doc_metadata.get("name")
                     return r
-            return self._intercepted_resources[-1]
 
         if self._page and not self._page.is_closed():
             try:
@@ -674,6 +867,9 @@ class WuolahBrowser:
                 if match:
                     filename = match.group(1)
 
+            if not filename and self._current_doc_metadata.get("name"):
+                filename = self._current_doc_metadata.get("name")
+
             resource = DocumentResource(
                 url=download_url,
                 content_type=doc_resp.headers.get("content-type", "application/pdf"),
@@ -681,7 +877,9 @@ class WuolahBrowser:
                 data=raw_bytes,
                 filename=filename,
             )
-            return resource
+            if self._is_valid_complete_resource(resource):
+                return resource
+            return None
 
         except Exception as e:
             logger.debug(f"Excepción durante descarga directa por API: {e}")
