@@ -14,6 +14,7 @@ services:
       - TEMP_DIR=/tmp/wuolah-pdf
       - BROWSER_TIMEOUT_SECONDS=150
       - DOWNLOAD_TIMEOUT_SECONDS=120
+      - WUOLAH_TOKEN=${WUOLAH_TOKEN:-}
     volumes:
       - ./data:/tmp/wuolah-pdf
     restart: unless-stopped

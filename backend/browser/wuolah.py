@@ -729,6 +729,24 @@ class WuolahBrowser:
             except Exception as e:
                 logger.debug(f"Error confirmando modal de descarga: {e}")
 
+            # Check if clicking download opened an "Inicia sesión" modal
+            try:
+                login_required = await self._page.evaluate("""() => {
+                    const modal = document.querySelector('.chakra-modal__content-container, [role="dialog"], .modal');
+                    if (!modal) return false;
+                    const text = (modal.innerText || modal.textContent || '').trim();
+                    return text.includes('Inicia sesión') || text.includes('Iniciar sesión') || !!modal.querySelector('input[type="email"]');
+                }""")
+                if login_required:
+                    raise WuolahBrowserError(
+                        "Para descargar este documento es necesario iniciar sesión en Wuolah. "
+                        "Por favor, pulsa en 'Sin sesión' en la barra superior de la aplicación para conectar tu cuenta de Wuolah."
+                    )
+            except WuolahBrowserError:
+                raise
+            except Exception:
+                pass
+
         # Wait loop for network interception, handling any ad countdown or subsequent confirmation
         start_wait = asyncio.get_event_loop().time()
         while asyncio.get_event_loop().time() - start_wait < timeout:
@@ -752,19 +770,26 @@ class WuolahBrowser:
             # Check if an ad countdown finished or requires confirmation
             if self._page and not self._page.is_closed():
                 try:
-                    # Check modal text for countdown timer or reCAPTCHA
+                    # Check modal text for countdown timer, login prompt, or reCAPTCHA
                     modal_state = await self._page.evaluate("""() => {
                         const modal = document.querySelector('.chakra-modal__content-container, [role="dialog"], .modal');
                         if (!modal) return { hasModal: false };
                         const text = (modal.innerText || modal.textContent || '').trim();
+                        const isLogin = text.includes('Inicia sesión') || text.includes('Iniciar sesión') || !!modal.querySelector('input[type="email"]');
                         const isRecaptcha = text.toLowerCase().includes('no eres un robot') || !!document.querySelector('iframe[src*="recaptcha"]');
                         return {
                             hasModal: true,
                             text: text.substring(0, 150),
+                            isLogin: isLogin,
                             isRecaptcha: isRecaptcha
                         };
                     }""")
                     if modal_state and modal_state.get("hasModal"):
+                        if modal_state.get("isLogin"):
+                            raise WuolahBrowserError(
+                                "Para descargar este documento es necesario iniciar sesión en Wuolah. "
+                                "Por favor, pulsa en 'Sin sesión' en la barra superior de la aplicación para conectar tu cuenta de Wuolah."
+                            )
                         if modal_state.get("isRecaptcha"):
                             if on_status_update:
                                 await on_status_update("Wuolah solicita verificación reCAPTCHA para la descarga...")
@@ -773,6 +798,8 @@ class WuolahBrowser:
                             match = re.search(r'(\d+)\s*(?:s(?:eg(?:undos?)?)?)\b', txt, re.IGNORECASE)
                             if match and on_status_update:
                                 await on_status_update(f"Esperando anuncio de Wuolah ({match.group(1)}s restantes)...")
+                except WuolahBrowserError:
+                    raise
                 except Exception:
                     pass
 
