@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" alt="Docker Ready" />
   <img src="https://img.shields.io/badge/Playwright-Chromium-45BA4B?logo=playwright&logoColor=white" alt="Playwright" />
-  <img src="https://img.shields.io/badge/Tests-47%2F47%20Passed-brightgreen" alt="Tests" />
+  <img src="https://img.shields.io/badge/Tests-58%2F58%20Passed-brightgreen" alt="Tests" />
   <img src="https://img.shields.io/badge/License-MIT-orange" alt="License" />
 </p>
 
@@ -47,10 +47,10 @@
 
 ## 1. Visión General
 
-**Wuolah PDF Helper** es una solución de ingeniería de software diseñada para estudiantes y académicos que necesitan acceder a sus apuntes y documentos universitarios de forma limpia, rápida y sin distracciones publicitarias.
+**Wuolah PDF Helper** es una solución de ingeniería de software diseñada para estudiantes y académicos que necesitan acceder a sus apuntes y documentos universitarios de forma limpia y sin distracciones publicitarias.
 
 La plataforma Wuolah implementa mecanismos de entrega complejos:
-- Páginas intersticiales con temporizadores de cuenta atrás (~50 segundos).
+- Páginas intersticiales con temporizadores de cuenta atrás (~30-60 segundos).
 - Modales recurrentes de suscripción y compra de saldo (*coins* o modalidad *Turbo*).
 - **Envenenamiento de bytes:** Ofuscación a nivel binario mediante XOR con clave 27 (`0x1B`) sobre la cabecera de los archivos PDF para impedir su lectura en visores externos.
 - Inserción de páginas completas de anuncios de marcas comerciales entre las páginas de contenido legítimo.
@@ -61,8 +61,8 @@ La plataforma Wuolah implementa mecanismos de entrega complejos:
 
 ## 2. Características Destacadas
 
-* ⚡ **Vía Rápida Autorizada (~1s):** Si el usuario dispone de sesión en Chromium, el backend negocia la URL firmada del documento directamente con el endpoint oficial de descarga, evitando por completo la cuenta atrás de publicidad de la web.
-* 🛡️ **Fallback Inteligente:** Si la vía directa no está disponible, un controlador Playwright de navegación automatizada interactúa con la página, cerrando modales de suscripción y seleccionando estrictamente la descarga gratuita con publicidad.
+* ⚡ **Descarga Automatizada con Doble Vía:** El sistema intenta primero una **Vía Rápida** (~1s) negociando directamente con la API oficial de Wuolah. Si la API no lo permite, activa un **Fallback DOM Inteligente** que navega la web automáticamente, gestiona el countdown de publicidad (~30-60s) y captura el PDF desde el tráfico de red — sin intervención manual.
+* 🛡️ **Fallback DOM Robusto:** Playwright interactúa con la página cerrando modales de suscripción, seleccionando la descarga gratuita con publicidad, reintentando clics automáticamente si la descarga no se inicia, y gestionando pestañas emergentes de anuncios.
 * 🧩 **Desofuscación XOR-27:** Algoritmo que detecta cabeceras alteradas y aplica la transformación inversa en los primeros 128 bytes, restituyendo la cabecera mágica `%PDF` en milisegundos.
 * 🧹 **Eliminación Quirúrgica de Publicidad:** Análisis heurístico de páginas con PyMuPDF (`fitz`) para identificar y extirpar las portadas promocionales, banners de patrocinadores y hojas intercaladas añadidas por Wuolah, conservando el 100% del contenido original.
 * 🔄 **Sesión Automática Permanente:** Olvídate de copiar tokens JWT a mano cada 24 horas. El perfil persistente de Chromium (`data/browser_profile`) almacena las cookies de refresco y renueva los accesos de forma completamente desatendida.
@@ -177,7 +177,8 @@ Con Docker Desktop no necesitas instalar ni Python ni Node.js en tu equipo.
 3. Haz clic en **"Limpiar y Descargar PDF"**.
 4. La aplicación mostrará una tarjeta de progreso en vivo indicando:
    - *Verificación de seguridad de enlace.*
-   - *Negociación con la API y CDN de Wuolah.*
+   - *Intento de Vía Rápida (descarga directa por API).*
+   - *Si no es posible: navegación automatizada y espera del countdown de Wuolah (~30-60s).*
    - *Desofuscación de cabecera binaria XOR-27.*
    - *Detección y extirpación de páginas publicitarias.*
    - *Validación estructural del PDF final.*
@@ -257,7 +258,7 @@ Wuolah PDF Helper fue diseñado bajo el principio de **cero almacenamiento de se
 │   │   ├── normalizer.py           # Protocolo abstracto
 │   │   ├── processor.py            # Eliminación de publicidad con PyMuPDF
 │   │   └── validator.py            # Validación de integridad estructural
-│   └── tests/                      # Suite de 47 pruebas unitarias automáticas
+│   └── tests/                      # Suite de 58 pruebas unitarias automáticas
 ├── frontend/                       # Aplicación web interactiva (SPA)
 │   ├── src/
 │   │   ├── components/             # Componentes React (LoginStatus, ResultCard...)
@@ -313,10 +314,10 @@ BROWSER_HEADLESS=false
 TEMP_DIR=./data
 
 # Tiempo máximo de espera en navegación (segundos)
-BROWSER_TIMEOUT_SECONDS=90
+BROWSER_TIMEOUT_SECONDS=120
 
 # Tiempo máximo de espera en descarga de archivos (segundos)
-DOWNLOAD_TIMEOUT_SECONDS=60
+DOWNLOAD_TIMEOUT_SECONDS=120
 ```
 
 ---
@@ -331,15 +332,16 @@ pytest backend/tests -v
 
 Resultado de la suite:
 ```text
-backend/tests/test_analyzer.py .....                 [ 10%]
-backend/tests/test_api.py .......                    [ 25%]
+backend/tests/test_analyzer.py .....                 [  8%]
+backend/tests/test_api.py ............               [ 29%]
 backend/tests/test_direct_download.py ..........     [ 46%]
-backend/tests/test_normalizer.py ......              [ 59%]
-backend/tests/test_pipeline.py .....                 [ 70%]
-backend/tests/test_security.py ......                [ 82%]
+backend/tests/test_full_document_fetch.py ....       [ 53%]
+backend/tests/test_normalizer.py .......             [ 65%]
+backend/tests/test_pipeline.py .....                 [ 74%]
+backend/tests/test_security.py ......                [ 84%]
 backend/tests/test_validator.py ........             [100%]
 
-======================= 47 passed in 0.48s =======================
+======================= 58 passed in 0.52s =======================
 ```
 
 ---
