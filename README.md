@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/alvarofrancogs/wuolah-pdf-helper/actions"><img src="https://github.com/alvarofrancogs/wuolah-pdf-helper/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
+  <a href="https://github.com/alvarofrancogs/academic-pdf-helper/actions"><img src="https://github.com/alvarofrancogs/academic-pdf-helper/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
   <img src="https://img.shields.io/badge/Python-3.12%20%7C%203.14-blue?logo=python&logoColor=white" alt="Python Version" />
   <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
@@ -122,7 +122,7 @@ flowchart TD
 ```
 
 <p align="center">
-  <img src="docs/assets/preview-modal.png" alt="Arquitectura del Pipeline en Wuolah PDF Helper" width="750" />
+  <img src="docs/assets/preview-modal.png" alt="Arquitectura del Pipeline en Academic PDF Helper" width="750" />
 </p>
 
 ---
@@ -171,27 +171,27 @@ Con Docker Desktop no necesitas instalar ni Python ni Node.js en tu equipo.
 
 ## 5. Guía de Uso Paso a Paso
 
-### Paso 1: Conexión de tu sesión de Wuolah (100% Web, Sin Terminales)
+### Paso 1: Conexión de tu sesión (100% Web, Sin Terminales)
 1. Abre la web en tu navegador (`http://localhost:8000`).
 2. Observa el indicador superior de sesión:
    - Si indica *"Sin sesión"*, haz clic en **"Iniciar sesión"** o pulsa sobre la insignia de estado.
 3. Se abrirá la ventana modal de conexión donde tienes 3 opciones según tu entorno:
    - **Opción Recomendada (Docker o Servidor - 1 Clic):**
      1. Haz clic en **"Abrir Wuolah en nueva pestaña"** e inicia sesión con tu cuenta de siempre (Google, email, etc.).
-     2. Arrastra el botón **"Conectar con Wuolah Helper"** a tu barra de marcadores del navegador (solo se hace una vez).
+     2. Arrastra el botón de conexión a tu barra de marcadores del navegador (solo se hace una vez).
      3. Estando en la pestaña de Wuolah, haz clic en ese marcador.
-     4. ¡Listo! La sesión se transferirá al instante a Wuolah PDF Helper, el indicador cambiará a **"Sesión activa"** y la ventana se cerrará sola. **Sin tocar ninguna terminal ni instalar extensiones.**
-   - **Pegar Token:** Si prefieres no usar marcadores, copia tu token JWT de Wuolah y pégalo directamente en la pestaña correspondiente.
+     4. ¡Listo! La sesión se transferirá al instante a Academic PDF Helper, el indicador cambiará a **"Sesión activa"** y la ventana se cerrará sola. **Sin tocar ninguna terminal ni instalar extensiones.**
+   - **Pegar Token:** Si prefieres no usar marcadores, copia tu token JWT de la plataforma y pégalo directamente en la pestaña correspondiente.
    - **Ventana Chromium:** Si ejecutas la aplicación de forma local en tu escritorio con `python run.py`, puedes abrir una ventana de Chromium controlada de forma directa.
 
 ### Paso 2: Procesamiento y Limpieza de un PDF
 1. Ve a cualquier apunte o documento en Wuolah y copia la URL de tu navegador (ejemplo: `https://wuolah.com/apuntes/universidad/...`).
-2. Pega el enlace en el cajón de entrada de Wuolah PDF Helper.
+2. Pega el enlace en el cajón de entrada de Academic PDF Helper.
 3. Haz clic en **"Obtener PDF limpio"**.
 4. La aplicación mostrará una tarjeta de progreso en vivo indicando:
    - *Verificación de seguridad de enlace.*
    - *Intento de Vía Rápida (descarga directa por API).*
-   - *Si no es posible: navegación automatizada y espera del countdown de Wuolah (~30-60s).*
+   - *Si no es posible: navegación automatizada y espera del countdown de la plataforma (~30-60s).*
    - *Desofuscación de cabecera binaria XOR-27.*
    - *Detección y extirpación de páginas publicitarias.*
    - *Validación estructural del PDF final.*
@@ -203,7 +203,7 @@ Con Docker Desktop no necesitas instalar ni Python ni Node.js en tu equipo.
    - **"Vista previa"**: Para inspeccionar el documento en el visor PDF interactivo integrado en la propia aplicación (con zoom, navegación de páginas e impresión directa).
 
 ### Paso 4: Cambio de cuenta
-Si deseas cambiar de usuario o entrar con otra cuenta de Wuolah:
+Si deseas cambiar de usuario o entrar con otra cuenta:
 1. Haz clic en el botón **"Cambiar"** o **"Salir"** situado en la barra de sesión superior.
 2. Podrás limpiar las cookies actuales o conectar una nueva cuenta en segundos.
 
@@ -211,16 +211,16 @@ Si deseas cambiar de usuario o entrar con otra cuenta de Wuolah:
 
 ## 6. El Pipeline PDF y la Desofuscación XOR-27
 
-Uno de los aportes técnicos centrales de este proyecto es el aislamiento y resolución de la ofuscación de Wuolah.
+Uno de los aportes técnicos centrales de este proyecto es el aislamiento y resolución de la ofuscación binaria detectada en plataformas académicas como Wuolah.
 
-### ¿Por qué los visores fallan al abrir descargas de Wuolah?
-Wuolah altera intencionadamente la firma binaria de sus documentos mediante una operación XOR bit a bit con valor entero `27` (`0x1B`) sobre los primeros 128 bytes:
+### ¿Por qué los visores estándar fallan al abrir estas descargas?
+La plataforma altera la firma binaria de sus documentos mediante una operación XOR bit a bit con valor entero `27` (`0x1B`) sobre los primeros 128 bytes:
 
 ```text
 Cabecera esperada estándar:   %   P   D   F   -   1   .   7
 Bytes hexadecimales:         25  50  44  46  2D  31  2E  37
 Clave XOR (27 / 0x1B):       1B  1B  1B  1B  1B  1B  1B  1B
-Bytes recibidos de Wuolah:   3E  4B  5F  5D  36  2A  35  2C
+Bytes alterados recibidos:   3E  4B  5F  5D  36  2A  35  2C
 ```
 
 Al carecer de la firma `%PDF`, cualquier lector (Acrobat, Chrome, Preview) rechaza el archivo considerándolo corrupto o no reconocido.
@@ -232,16 +232,16 @@ Al carecer de la firma `%PDF`, cualquier lector (Acrobat, Chrome, Preview) recha
    ```python
    pdf_restaurado = bytes([b ^ 27 for b in data[:128]]) + data[128:]
    ```
-3. **`processor.py`:** Carga el árbol de objetos PDF con PyMuPDF (`fitz`), evalúa cada página en busca de patrones de banners, textos de patrocinadores (*"Descarga gratis en Wuolah"*, *logos corporativos de anunciantes*) y descarta esas páginas del documento final.
+3. **`processor.py`:** Carga el árbol de objetos PDF con PyMuPDF (`fitz`), evalúa cada página en busca de patrones de banners, textos de patrocinadores (*"Descarga gratis"*, *logos corporativos de anunciantes*) y descarta esas páginas del documento final.
 4. **`validator.py`:** Comprueba que el archivo resultante cumple estrictamente la especificación ISO 32000-1, verificando que no contiene referencias rotas ni cargas maliciosas.
 
 ---
 
 ## 7. Seguridad y Privacidad por Diseño
 
-Wuolah PDF Helper fue diseñado bajo el principio de **cero almacenamiento de secretos**:
+Academic PDF Helper fue diseñado bajo el principio de **cero almacenamiento de secretos**:
 
-* **Sin bases de datos de credenciales:** Tu contraseña nunca pasa por el backend. Se introduce directamente en la ventana oficial de Chromium cargada desde los servidores de Wuolah.
+* **Sin bases de datos de credenciales:** Tu contraseña nunca pasa por el backend. Se introduce directamente en la ventana oficial de Chromium cargada desde los servidores del proveedor.
 * **Prevención SSRF (Server-Side Request Forgery):** El sistema rechaza rigurosamente esquemas `file://`, `ftp://`, IPs privadas (`10.0.0.0/8`, `192.168.0.0/16`, `127.0.0.1`), resoluciones locales (`localhost`) y cualquier dominio distinto a `wuolah.com`.
 * **Directorio `data/` en `.gitignore`:** Las cookies, el perfil de Chromium y los archivos temporales se ubican exclusivamente en `./data/`, directorio que está blindado en `.gitignore` para garantizar que **nunca se subirá a GitHub ni se compartirá con terceros**.
 * **Sanitización de Path Traversal:** Los nombres de archivo sugeridos por los servidores se limpian mediante expresiones regulares estrictas para evitar ataques de sobreescritura en el sistema de archivos local.
