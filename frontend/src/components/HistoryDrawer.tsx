@@ -26,17 +26,30 @@ export const HistoryDrawer: React.FC<Props> = ({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center justify-between py-3 text-xs font-semibold text-muted hover:text-ink transition-colors"
+        className="group w-full flex items-center justify-between py-3 text-xs font-semibold text-muted hover:text-ink transition-colors select-none"
       >
-        <span className="flex items-center gap-1.5">
-          <i className="bi bi-clock-history text-xs" />
+        <span className="flex items-center gap-2">
+          <i className="bi bi-clock-history text-xs text-muted group-hover:text-ink transition-colors" />
           <span>Historial reciente ({items.length})</span>
         </span>
-        <i className={`bi ${isOpen ? 'bi-dash-lg' : 'bi-plus-lg'} text-xs`} />
+        <span
+          className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all duration-300 ease-out ${
+            isOpen
+              ? 'bg-ink text-white border-ink rotate-180'
+              : 'bg-surface text-muted border-border group-hover:border-ink/30 group-hover:text-ink rotate-0'
+          }`}
+          title={isOpen ? 'Contraer historial' : 'Desplegar historial'}
+        >
+          <i className={`bi ${isOpen ? 'bi-dash' : 'bi-plus'} text-xs leading-none transition-transform duration-300`} />
+        </span>
       </button>
 
-      {isOpen && (
-        <div className="space-y-1 pb-2">
+      <div
+        className={`grid transition-all duration-300 ease-out ${
+          isOpen ? 'grid-rows-[1fr] opacity-100 mt-1 mb-2' : 'grid-rows-[0fr] opacity-0 my-0 pointer-events-none'
+        }`}
+      >
+        <div className="overflow-hidden space-y-1 pb-1">
           {items.map((item) => {
             const time = new Date(item.timestamp).toLocaleTimeString([], {
               hour: '2-digit',
@@ -97,7 +110,7 @@ export const HistoryDrawer: React.FC<Props> = ({
             <span>Borrar historial</span>
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

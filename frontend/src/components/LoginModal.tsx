@@ -10,6 +10,7 @@ interface Props {
 }
 
 export const LoginModal: React.FC<Props> = ({ isOpen, onClose, session, onSessionUpdated }) => {
+  const [visible, setVisible] = useState(false);
   const [activeTab, setActiveTab] = useState<'sync' | 'token' | 'chromium'>('sync');
   const [tokenInput, setTokenInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,17 +18,30 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose, session, onSessio
   const [copied, setCopied] = useState(false);
   const [justConnected, setJustConnected] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      requestAnimationFrame(() => setVisible(true));
+    } else {
+      setVisible(false);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 350);
+  };
+
   // Auto-close if session becomes authenticated
   useEffect(() => {
     if (session?.authenticated && isOpen) {
       setJustConnected(true);
       const timer = setTimeout(() => {
         setJustConnected(false);
-        onClose();
+        handleClose();
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [session?.authenticated, isOpen, onClose]);
+  }, [session?.authenticated, isOpen]);
 
   if (!isOpen) return null;
 
@@ -57,7 +71,7 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose, session, onSessio
       setJustConnected(true);
       setTimeout(() => {
         setJustConnected(false);
-        onClose();
+        handleClose();
       }, 1200);
     } catch (err: any) {
       setError(err.message || 'Token no válido.');
@@ -72,7 +86,7 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose, session, onSessio
     try {
       const res = await api.startSession();
       onSessionUpdated(res);
-      onClose();
+      handleClose();
     } catch (err: any) {
       setError(err.message || 'No se pudo abrir el navegador.');
     } finally {
@@ -81,8 +95,18 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose, session, onSessio
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-lg bg-white rounded-card shadow-2xl border border-border overflow-hidden">
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-[350ms] ease-out ${
+        visible ? 'bg-ink/60 backdrop-blur-sm' : 'bg-transparent backdrop-blur-0 pointer-events-none'
+      }`}
+      onClick={handleClose}
+    >
+      <div
+        className={`relative w-full max-w-lg bg-white rounded-card shadow-2xl border border-border overflow-hidden transition-all duration-[350ms] ease-out ${
+          visible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-2.5">
@@ -96,7 +120,7 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose, session, onSessio
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="text-muted hover:text-ink p-1 rounded-md transition-colors"
           >
             <i className="bi bi-x-lg text-sm" />
@@ -200,7 +224,7 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose, session, onSessio
                         title="Arrastra este botón a tu barra de marcadores"
                       >
                         <i className="bi bi-bookmark-plus" />
-                        <span>⚡ Conectar con Wuolah Helper</span>
+                        <span>Conectar con Wuolah Helper</span>
                       </a>
                       <button
                         type="button"
@@ -284,7 +308,7 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose, session, onSessio
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="px-4 py-2 text-xs font-semibold text-muted hover:text-ink transition-colors"
                 >
                   Cancelar

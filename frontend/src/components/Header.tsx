@@ -29,7 +29,7 @@ export const Header: React.FC<Props> = ({ onOpenArchitecture }) => {
           Cómo funciona
         </button>
         <a
-          href="https://github.com"
+          href="https://github.com/alvarofrancogs/wuolah-pdf-helper"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-muted hover:text-ink transition-colors"
