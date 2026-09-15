@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/alvarofrancogs/wuolah-pdf-helper/actions"><img src="https://github.com/alvarofrancogs/wuolah-pdf-helper/actions/workflows/ci.yml/badge.svg" alt="CI Status" /></a>
   <img src="https://img.shields.io/badge/Python-3.12%20%7C%203.14-blue?logo=python&logoColor=white" alt="Python Version" />
   <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black" alt="React 18" />
   <img src="https://img.shields.io/badge/TypeScript-5.5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
@@ -17,6 +18,10 @@
   <img src="https://img.shields.io/badge/Playwright-Chromium-45BA4B?logo=playwright&logoColor=white" alt="Playwright" />
   <img src="https://img.shields.io/badge/Tests-58%2F58%20Passed-brightgreen" alt="Tests" />
   <img src="https://img.shields.io/badge/License-MIT-orange" alt="License" />
+</p>
+
+<p align="center">
+  <img src="docs/assets/preview-main.png" alt="Wuolah PDF Helper - Interfaz de Usuario" width="850" />
 </p>
 
 ---
@@ -111,6 +116,10 @@ flowchart TD
     JobMgr -->|"5. Polling de estado y descarga"| UI
     Viewer -->|"6. Renderizado en memoria"| UI
 ```
+
+<p align="center">
+  <img src="docs/assets/preview-modal.png" alt="Arquitectura del Pipeline en Wuolah PDF Helper" width="750" />
+</p>
 
 ---
 
