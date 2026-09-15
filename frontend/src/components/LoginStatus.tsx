@@ -46,14 +46,14 @@ export const LoginStatus: React.FC<Props> = ({ session, onSessionUpdated }) => {
             title={isAuthenticated ? 'Sesión activa' : 'Sin sesión (haz clic para conectar)'}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
               isAuthenticated
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                ? 'bg-surface text-ink border-border'
                 : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 cursor-pointer'
             }`}
           >
             {loading ? (
               <i className="bi bi-arrow-repeat animate-spin text-xs" />
             ) : isAuthenticated ? (
-              <i className="bi bi-shield-check text-emerald-600 text-xs" />
+              <span className="w-1.5 h-1.5 rounded-full bg-ink shrink-0" />
             ) : (
               <i className="bi bi-shield-x text-rose-600 text-xs" />
             )}

@@ -27,7 +27,7 @@ export const ResultCard: React.FC<Props> = ({ job, onReset, onPreview }) => {
       {/* Success header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold bg-surface text-ink border border-border uppercase tracking-wider">
             <i className="bi bi-check2 text-xs" />
             Documento listo
           </span>
@@ -58,7 +58,7 @@ export const ResultCard: React.FC<Props> = ({ job, onReset, onPreview }) => {
 
       {metadata?.detected_type === 'wuolah_xor_obfuscated' && (
         <p className="text-xs text-muted bg-surface border border-border rounded-card px-4 py-2.5 mb-6 flex items-center gap-2">
-          <i className="bi bi-shield-check text-emerald-600 text-sm" />
+          <i className="bi bi-shield-check text-ink text-sm" />
           <span>Cabecera XOR-27 reparada automáticamente</span>
         </p>
       )}
@@ -92,8 +92,8 @@ export const ResultCard: React.FC<Props> = ({ job, onReset, onPreview }) => {
         >
           {copied ? (
             <>
-              <i className="bi bi-check2 text-emerald-600 text-xs" />
-              <span className="text-emerald-700 font-semibold">Enlace copiado</span>
+              <i className="bi bi-check2 text-ink text-xs" />
+              <span className="text-ink font-semibold">Enlace copiado</span>
             </>
           ) : (
             <>

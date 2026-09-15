@@ -105,8 +105,8 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose, session, onSessio
 
         {/* Success Banner if just connected */}
         {justConnected && (
-          <div className="p-4 bg-emerald-50 border-b border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-fade-in">
-            <i className="bi bi-check-circle-fill text-emerald-600 text-sm" />
+          <div className="p-4 bg-surface border-b border-border text-ink text-xs font-semibold flex items-center gap-2 animate-fade-in">
+            <i className="bi bi-check-circle-fill text-ink text-sm" />
             <span>¡Sesión conectada con éxito! Cerrando ventana…</span>
           </div>
         )}
@@ -208,7 +208,7 @@ export const LoginModal: React.FC<Props> = ({ isOpen, onClose, session, onSessio
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-ink bg-white border border-border rounded-lg hover:bg-surface transition-all"
                         title="O copia el código para ejecutarlo en la consola de Wuolah"
                       >
-                        <i className={`bi ${copied ? 'bi-check-lg text-emerald-600' : 'bi-clipboard'}`} />
+                        <i className={`bi ${copied ? 'bi-check-lg text-ink' : 'bi-clipboard'}`} />
                         <span>{copied ? '¡Copiado!' : 'Copiar código'}</span>
                       </button>
                     </div>

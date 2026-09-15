@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface Props {
   isOpen: boolean;
@@ -6,13 +6,30 @@ interface Props {
 }
 
 export const ArchitectureModal: React.FC<Props> = ({ isOpen, onClose }) => {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Trigger enter animation on next frame
+      requestAnimationFrame(() => setVisible(true));
+    } else {
+      setVisible(false);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setVisible(false);
+    // Wait for exit animation to complete before unmounting
+    setTimeout(onClose, 350);
+  };
+
   if (!isOpen) return null;
 
   const steps = [
     {
       num: '01',
-      title: 'Fast-Path Direct API',
-      desc: 'El timer de 50s de Wuolah es cosmético. Llamamos directamente a POST /v2/download con avoidFallback: true y el token de sesión, obteniendo la URL del PDF en <1.2s.',
+      title: 'Doble Vía de Descarga',
+      desc: 'Primero intenta la Vía Rápida negociando directamente con la API de Wuolah (~1s). Si la API no lo permite, activa el Fallback DOM: navega la web automáticamente, gestiona el countdown de publicidad y captura el PDF desde el tráfico de red.',
     },
     {
       num: '02',
@@ -26,8 +43,8 @@ export const ArchitectureModal: React.FC<Props> = ({ isOpen, onClose }) => {
     },
     {
       num: '04',
-      title: 'Playwright Session Fallback',
-      desc: 'Para autenticación inicial, Chromium headless gestiona cookies y almacenamiento local de forma segura, sin exponer credenciales.',
+      title: 'Sesión Persistente',
+      desc: 'Chromium headless gestiona cookies y almacenamiento local de forma segura. Puedes conectar tu sesión desde el navegador sin exponer credenciales.',
     },
   ];
 
@@ -35,21 +52,25 @@ export const ArchitectureModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/60 backdrop-blur-sm"
-      onClick={onClose}
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-[350ms] ease-out ${
+        visible ? 'bg-ink/60 backdrop-blur-sm' : 'bg-transparent backdrop-blur-0'
+      }`}
+      onClick={handleClose}
     >
       <div
-        className="w-full max-w-xl bg-white rounded-card overflow-hidden shadow-xl"
+        className={`w-full max-w-xl bg-white rounded-card overflow-hidden shadow-xl transition-all duration-[350ms] ease-out ${
+          visible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
           <div>
             <h3 className="text-base font-extrabold text-ink">Cómo funciona</h3>
-            <p className="text-xs text-muted mt-0.5">Pipeline de procesamiento en ~1 segundo</p>
+            <p className="text-xs text-muted mt-0.5">Pipeline automatizado de procesamiento</p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 text-muted hover:text-ink transition-colors rounded-full hover:bg-surface"
             title="Cerrar"
           >
@@ -59,8 +80,14 @@ export const ArchitectureModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
         {/* Steps */}
         <div className="px-6 py-5 space-y-5 max-h-[60vh] overflow-y-auto">
-          {steps.map((step) => (
-            <div key={step.num} className="flex gap-4">
+          {steps.map((step, index) => (
+            <div
+              key={step.num}
+              className={`flex gap-4 transition-all duration-[400ms] ease-out ${
+                visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-3'
+              }`}
+              style={{ transitionDelay: visible ? `${(index + 1) * 80}ms` : '0ms' }}
+            >
               <span className="text-3xl font-extrabold text-border leading-none shrink-0">
                 {step.num}
               </span>
@@ -92,7 +119,7 @@ export const ArchitectureModal: React.FC<Props> = ({ isOpen, onClose }) => {
         {/* Footer */}
         <div className="px-6 py-4 bg-surface border-t border-border flex justify-end">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="px-4 py-2 text-xs font-bold text-white bg-ink rounded-card hover:bg-black transition-colors"
           >
             Entendido
