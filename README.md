@@ -71,7 +71,7 @@ La plataforma Wuolah implementa mecanismos de entrega complejos:
 * **Desofuscación XOR-27:** Algoritmo que detecta cabeceras alteradas y aplica la transformación inversa en los primeros 128 bytes, restituyendo la cabecera mágica `%PDF` en milisegundos.
 * **Eliminación Quirúrgica de Publicidad:** Análisis heurístico de páginas con PyMuPDF (`fitz`) para identificar y extirpar las portadas promocionales, banners de patrocinadores y hojas intercaladas añadidas por Wuolah, conservando el 100% del contenido original.
 * **Sesión Automática Permanente:** Olvídate de copiar tokens JWT a mano cada 24 horas. El perfil persistente de Chromium (`data/browser_profile`) almacena las cookies de refresco y renueva los accesos de forma completamente desatendida.
-* **Diseño Editorial de Alto Nivel:** Frontend reactivo construido con React 18, TypeScript y Tailwind CSS con estética minimalista (tipografía *Plus Jakarta Sans*, paleta cromática neutra, interruptor animado en tiempo real con estados visuales ON/OFF y cero emojis).
+* **Diseño Editorial de Alto Nivel:** Frontend reactivo construido con React 18, TypeScript y Tailwind CSS con estética minimalista (tipografía *Plus Jakarta Sans*, paleta cromática sobria, barra de estado de sesión en tiempo real, modales interactivos con transiciones fluidas y diseño sin estridencias).
 * **Preparado para Docker Desktop:** Compatible con arquitecturas x86 y ARM. Ejecución en segundo plano con un solo clic desde Docker Desktop sin necesidad de mantener consolas abiertas.
 
 ---
@@ -84,7 +84,7 @@ El proyecto opera bajo un modelo desacoplado cliente-servidor con integración d
 flowchart TD
     subgraph Frontend ["Frontend (React 18 + TS + Tailwind)"]
         UI["Interfaz Web (localhost:8000)"]
-        Switch["Live Session Switch (ON/OFF)"]
+        SessionBar["Session Status Bar (Active / Guest)"]
         Viewer["PDF Viewer Modal (PDF.js)"]
     end
 
@@ -169,21 +169,21 @@ Con Docker Desktop no necesitas instalar ni Python ni Node.js en tu equipo.
 
 ### Paso 1: Conexión de tu sesión de Wuolah (100% Web, Sin Terminales)
 1. Abre la web en tu navegador (`http://localhost:8000`).
-2. Observa el interruptor superior:
-   - Si está en **OFF (rojo)** con el texto *"Sin sesión"*, haz clic en **"Iniciar sesión"** o pulsa sobre el interruptor.
+2. Observa el indicador superior de sesión:
+   - Si indica *"Sin sesión"*, haz clic en **"Iniciar sesión"** o pulsa sobre la insignia de estado.
 3. Se abrirá la ventana modal de conexión donde tienes 3 opciones según tu entorno:
    - **Opción Recomendada (Docker o Servidor - 1 Clic):**
      1. Haz clic en **"Abrir Wuolah en nueva pestaña"** e inicia sesión con tu cuenta de siempre (Google, email, etc.).
      2. Arrastra el botón **"Conectar con Wuolah Helper"** a tu barra de marcadores del navegador (solo se hace una vez).
      3. Estando en la pestaña de Wuolah, haz clic en ese marcador.
-     4. ¡Listo! La sesión se transferirá al instante a Wuolah PDF Helper, el interruptor se pondrá en **ON (verde)** automáticamente y la ventana se cerrará sola. **Sin tocar ninguna terminal ni instalar extensiones.**
+     4. ¡Listo! La sesión se transferirá al instante a Wuolah PDF Helper, el indicador cambiará a **"Sesión activa"** y la ventana se cerrará sola. **Sin tocar ninguna terminal ni instalar extensiones.**
    - **Pegar Token:** Si prefieres no usar marcadores, copia tu token JWT de Wuolah y pégalo directamente en la pestaña correspondiente.
    - **Ventana Chromium:** Si ejecutas la aplicación de forma local en tu escritorio con `python run.py`, puedes abrir una ventana de Chromium controlada de forma directa.
 
 ### Paso 2: Procesamiento y Limpieza de un PDF
 1. Ve a cualquier apunte o documento en Wuolah y copia la URL de tu navegador (ejemplo: `https://wuolah.com/apuntes/universidad/...`).
 2. Pega el enlace en el cajón de entrada de Wuolah PDF Helper.
-3. Haz clic en **"Limpiar y Descargar PDF"**.
+3. Haz clic en **"Obtener PDF limpio"**.
 4. La aplicación mostrará una tarjeta de progreso en vivo indicando:
    - *Verificación de seguridad de enlace.*
    - *Intento de Vía Rápida (descarga directa por API).*
@@ -200,8 +200,8 @@ Con Docker Desktop no necesitas instalar ni Python ni Node.js en tu equipo.
 
 ### Paso 4: Cambio de cuenta
 Si deseas cambiar de usuario o entrar con otra cuenta de Wuolah:
-1. Haz clic en el botón **"Cambiar sesión"** situado junto al interruptor de estado.
-2. La app limpiará las cookies actuales y abrirá una nueva ventana de Chromium para que accedas con la otra cuenta.
+1. Haz clic en el botón **"Cambiar"** o **"Salir"** situado en la barra de sesión superior.
+2. Podrás limpiar las cookies actuales o conectar una nueva cuenta en segundos.
 
 ---
 
@@ -248,6 +248,7 @@ Wuolah PDF Helper fue diseñado bajo el principio de **cero almacenamiento de se
 ## 8. Estructura del Repositorio
 
 ```text
+├── .github/workflows/              # Automatización CI (PyTest y build de frontend)
 ├── backend/                        # Servidor FastAPI y lógica de procesamiento
 │   ├── api/                        # Rutas REST y esquemas Pydantic
 │   │   ├── routes.py               # Endpoints de sesión, procesamiento y descarga
@@ -268,6 +269,7 @@ Wuolah PDF Helper fue diseñado bajo el principio de **cero almacenamiento de se
 │   │   ├── processor.py            # Eliminación de publicidad con PyMuPDF
 │   │   └── validator.py            # Validación de integridad estructural
 │   └── tests/                      # Suite de 58 pruebas unitarias automáticas
+├── docs/assets/                    # Capturas de pantalla de la interfaz de usuario
 ├── frontend/                       # Aplicación web interactiva (SPA)
 │   ├── src/
 │   │   ├── components/             # Componentes React (LoginStatus, ResultCard...)
@@ -277,6 +279,7 @@ Wuolah PDF Helper fue diseñado bajo el principio de **cero almacenamiento de se
 │   │   └── index.css               # Estilos Tailwind y tipografía
 │   ├── dist/                       # Bundle de producción servido por FastAPI
 │   └── vite.config.ts              # Configuración de compilación Vite
+├── scripts/                        # Utilidades auxiliares (captura de pantallas, etc.)
 ├── Dockerfile                      # Imagen Docker optimizada (Node + Playwright Jammy)
 ├── docker-compose.yml              # Orquestación de contenedores y volúmenes
 ├── run.py                          # Lanzador local para Windows / Linux
