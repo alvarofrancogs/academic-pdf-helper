@@ -1,11 +1,11 @@
-# Wuolah PDF Helper
+# Academic PDF Helper
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/twbs/icons/main/icons/file-earmark-pdf.svg" width="64" height="64" alt="PDF Icon" />
 </p>
 
 <p align="center">
-  <strong>Herramienta de grado editorial para obtención, desofuscación XOR-27, limpieza de publicidad y entrega de documentos PDF de Wuolah.</strong>
+  <strong>Herramienta de ingeniería de software para interoperabilidad, desofuscación binaria XOR-27 y normalización limpia de documentos académicos universitarios.</strong>
 </p>
 
 <p align="center">
@@ -20,8 +20,12 @@
   <img src="https://img.shields.io/badge/License-MIT-orange" alt="License" />
 </p>
 
+> [!NOTE]
+> **Aviso de Interoperabilidad y Marcas Registradas:**  
+> Este software es un proyecto independiente de código abierto enfocado en la investigación técnica de formatos documentales, desofuscación binaria y accesibilidad para estudiantes (conforme al marco de interoperabilidad técnica de los art. 99 y 100 del TRLPI y la Directiva Europea 2009/24/CE). No está afiliado, patrocinado, respaldado ni vinculado a Wuolah S.L. ni a ninguna de sus filiales. Todos los nombres de marcas registradas son propiedad exclusiva de sus respectivos titulares y se citan únicamente con fines identificativos de compatibilidad técnica.
+
 <p align="center">
-  <img src="docs/assets/preview-main.png" alt="Wuolah PDF Helper - Interfaz de Usuario" width="850" />
+  <img src="docs/assets/preview-main.png" alt="Academic PDF Helper - Interfaz de Usuario" width="850" />
 </p>
 
 ---
@@ -52,15 +56,15 @@
 
 ## 1. Visión General
 
-**Wuolah PDF Helper** es una solución de ingeniería de software diseñada para estudiantes y académicos que necesitan acceder a sus apuntes y documentos universitarios de forma limpia y sin distracciones publicitarias.
+**Academic PDF Helper** es una solución de ingeniería de software diseñada para estudiantes e investigadores universitarios que necesitan acceder a sus apuntes y documentos de forma interoperable, limpia y estandarizada.
 
-La plataforma Wuolah implementa mecanismos de entrega complejos:
+Plataformas de apuntes universitarios como Wuolah implementan mecanismos de entrega complejos:
 - Páginas intersticiales con temporizadores de cuenta atrás (~30-60 segundos).
 - Modales recurrentes de suscripción y compra de saldo (*coins* o modalidad *Turbo*).
-- **Envenenamiento de bytes:** Ofuscación a nivel binario mediante XOR con clave 27 (`0x1B`) sobre la cabecera de los archivos PDF para impedir su lectura en visores externos.
+- **Envenenamiento de bytes:** Ofuscación a nivel binario mediante XOR con clave 27 (`0x1B`) sobre la cabecera de los archivos PDF para impedir su lectura en visores externos estándar.
 - Inserción de páginas completas de anuncios de marcas comerciales entre las páginas de contenido legítimo.
 
-**Wuolah PDF Helper** automatiza y resuelve cada uno de estos retos de manera ética, manteniendo un contexto de navegador seguro, extrayendo el archivo original, reparando su estructura binaria y removiendo la publicidad inyectada para entregar un PDF estandarizado, ligero e impecable.
+**Academic PDF Helper** automatiza y resuelve cada uno de estos retos de manera ética y transparente para el usuario legítimo, manteniendo un contexto de navegador seguro, extrayendo el archivo original al que el usuario tiene derecho de acceso, reparando su estructura binaria y removiendo la publicidad inyectada para entregar un PDF estandarizado, ligero e impecable.
 
 ---
 
@@ -378,4 +382,4 @@ Puedes cambiar el puerto definiendo `PORT=8080` en tu archivo `.env` o editando 
 
 Este proyecto está bajo la Licencia **MIT**.
 
-> **Aviso Legal:** Esta herramienta ha sido desarrollada con fines exclusivamente educativos, de investigación técnica y para facilitar el estudio personal de apuntes y materiales compartidos legítimamente por la comunidad universitaria. Los autores no se hacen responsables del uso indebido de este software ni de infracciones a los términos de servicio de plataformas de terceros.
+> **Aviso Legal:** Esta herramienta ha sido desarrollada con fines exclusivamente educativos, de investigación técnica y para facilitar el estudio personal de apuntes y materiales compartidos legítimamente por la comunidad universitaria. El software no almacena, hospeda ni redistribuye contenidos protegidos por derechos de autor de terceros; opera exclusivamente como un cliente local del propio usuario. Los autores no se hacen responsables del uso indebido de este software ni de infracciones a los términos de servicio de plataformas de terceros. Todos los derechos de las marcas y nombres comerciales pertenecen a sus respectivos titulares.

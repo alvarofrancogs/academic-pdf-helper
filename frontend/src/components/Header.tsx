@@ -13,7 +13,7 @@ export const Header: React.FC<Props> = ({ onOpenArchitecture }) => {
           <i className="bi bi-file-earmark-pdf-fill text-base" />
         </div>
         <span className="font-extrabold text-ink tracking-tight text-base">
-          Wuolah PDF Helper
+          Academic PDF Helper
         </span>
         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent text-white uppercase tracking-wider">
           v1.2

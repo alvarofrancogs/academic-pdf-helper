@@ -174,7 +174,7 @@ export function App() {
 
       {/* Footer */}
       <footer className="text-center text-xs text-muted py-8 border-t border-border">
-        <p>Wuolah PDF Helper · Open Source · Sin almacenamiento de credenciales</p>
+        <p>Academic PDF Helper · Open Source · Sin almacenamiento de credenciales</p>
         <p className="mt-1 text-[11px] opacity-60">
           FastAPI · React · Playwright · PyMuPDF
         </p>

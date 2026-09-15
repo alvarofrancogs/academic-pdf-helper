@@ -8,13 +8,13 @@ export const Hero: React.FC = () => {
       </p>
 
       <h1 className="text-5xl sm:text-7xl font-extrabold text-ink tracking-tighter leading-[0.95] mb-6">
-        WUOLAH PDF
+        ACADEMIC PDF
         <br />
         HELPER
       </h1>
 
       <p className="text-base text-muted max-w-md mx-auto leading-relaxed mb-8">
-        Obtén tus apuntes de Wuolah limpios y sin publicidad.
+        Obtén tus apuntes académicos limpios y sin publicidad.
         Sin portadas promocionales, sin marcas de agua, sin esperas manuales.
       </p>
 
