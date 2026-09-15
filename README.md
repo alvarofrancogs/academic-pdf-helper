@@ -26,7 +26,7 @@
 
 ---
 
-## 📑 Tabla de Contenidos
+## Tabla de Contenidos
 
 1. [Visión General](#1-visión-general)
 2. [Características Destacadas](#2-características-destacadas)
@@ -66,13 +66,13 @@ La plataforma Wuolah implementa mecanismos de entrega complejos:
 
 ## 2. Características Destacadas
 
-* ⚡ **Descarga Automatizada con Doble Vía:** El sistema intenta primero una **Vía Rápida** (~1s) negociando directamente con la API oficial de Wuolah. Si la API no lo permite, activa un **Fallback DOM Inteligente** que navega la web automáticamente, gestiona el countdown de publicidad (~30-60s) y captura el PDF desde el tráfico de red — sin intervención manual.
-* 🛡️ **Fallback DOM Robusto:** Playwright interactúa con la página cerrando modales de suscripción, seleccionando la descarga gratuita con publicidad, reintentando clics automáticamente si la descarga no se inicia, y gestionando pestañas emergentes de anuncios.
-* 🧩 **Desofuscación XOR-27:** Algoritmo que detecta cabeceras alteradas y aplica la transformación inversa en los primeros 128 bytes, restituyendo la cabecera mágica `%PDF` en milisegundos.
-* 🧹 **Eliminación Quirúrgica de Publicidad:** Análisis heurístico de páginas con PyMuPDF (`fitz`) para identificar y extirpar las portadas promocionales, banners de patrocinadores y hojas intercaladas añadidas por Wuolah, conservando el 100% del contenido original.
-* 🔄 **Sesión Automática Permanente:** Olvídate de copiar tokens JWT a mano cada 24 horas. El perfil persistente de Chromium (`data/browser_profile`) almacena las cookies de refresco y renueva los accesos de forma completamente desatendida.
-* 🎨 **Diseño Editorial de Alto Nivel:** Frontend reactivo construido con React 18, TypeScript y Tailwind CSS con estética minimalista (tipografía *Plus Jakarta Sans*, paleta cromática neutra, interruptor animado en tiempo real con estados visuales ON/OFF y cero emojis).
-* 🐳 **Preparado para Docker Desktop:** Compatible con arquitecturas x86 y ARM. Ejecución en segundo plano con un solo clic desde Docker Desktop sin necesidad de mantener consolas abiertas.
+* **Descarga Automatizada con Doble Vía:** El sistema intenta primero una **Vía Rápida** (~1s) negociando directamente con la API oficial de Wuolah. Si la API no lo permite, activa un **Fallback DOM Inteligente** que navega la web automáticamente, gestiona el countdown de publicidad (~30-60s) y captura el PDF desde el tráfico de red — sin intervención manual.
+* **Fallback DOM Robusto:** Playwright interactúa con la página cerrando modales de suscripción, seleccionando la descarga gratuita con publicidad, reintentando clics automáticamente si la descarga no se inicia, y gestionando pestañas emergentes de anuncios.
+* **Desofuscación XOR-27:** Algoritmo que detecta cabeceras alteradas y aplica la transformación inversa en los primeros 128 bytes, restituyendo la cabecera mágica `%PDF` en milisegundos.
+* **Eliminación Quirúrgica de Publicidad:** Análisis heurístico de páginas con PyMuPDF (`fitz`) para identificar y extirpar las portadas promocionales, banners de patrocinadores y hojas intercaladas añadidas por Wuolah, conservando el 100% del contenido original.
+* **Sesión Automática Permanente:** Olvídate de copiar tokens JWT a mano cada 24 horas. El perfil persistente de Chromium (`data/browser_profile`) almacena las cookies de refresco y renueva los accesos de forma completamente desatendida.
+* **Diseño Editorial de Alto Nivel:** Frontend reactivo construido con React 18, TypeScript y Tailwind CSS con estética minimalista (tipografía *Plus Jakarta Sans*, paleta cromática neutra, interruptor animado en tiempo real con estados visuales ON/OFF y cero emojis).
+* **Preparado para Docker Desktop:** Compatible con arquitecturas x86 y ARM. Ejecución en segundo plano con un solo clic desde Docker Desktop sin necesidad de mantener consolas abiertas.
 
 ---
 
@@ -161,7 +161,7 @@ Con Docker Desktop no necesitas instalar ni Python ni Node.js en tu equipo.
 3. Vuelve a **Docker Desktop** y entra en la pestaña **Containers**:
    - Verás el contenedor llamado **`wuolah-pdf-helper`**.
    - Haz clic sobre el enlace **`8000:8000`** para abrir la web.
-   - En adelante, puedes cerrar todas las terminales y manejar la aplicación con los botones de **Play ▶** y **Stop ⏹** de Docker Desktop.
+   - En adelante, puedes cerrar todas las terminales y manejar la aplicación directamente desde los controles de Docker Desktop (Play / Stop).
 
 ---
 
@@ -174,7 +174,7 @@ Con Docker Desktop no necesitas instalar ni Python ni Node.js en tu equipo.
 3. Se abrirá la ventana modal de conexión donde tienes 3 opciones según tu entorno:
    - **Opción Recomendada (Docker o Servidor - 1 Clic):**
      1. Haz clic en **"Abrir Wuolah en nueva pestaña"** e inicia sesión con tu cuenta de siempre (Google, email, etc.).
-     2. Arrastra el botón **"⚡ Conectar con Wuolah Helper"** a tu barra de marcadores del navegador (solo se hace una vez).
+     2. Arrastra el botón **"Conectar con Wuolah Helper"** a tu barra de marcadores del navegador (solo se hace una vez).
      3. Estando en la pestaña de Wuolah, haz clic en ese marcador.
      4. ¡Listo! La sesión se transferirá al instante a Wuolah PDF Helper, el interruptor se pondrá en **ON (verde)** automáticamente y la ventana se cerrará sola. **Sin tocar ninguna terminal ni instalar extensiones.**
    - **Pegar Token:** Si prefieres no usar marcadores, copia tu token JWT de Wuolah y pégalo directamente en la pestaña correspondiente.
@@ -237,11 +237,11 @@ Al carecer de la firma `%PDF`, cualquier lector (Acrobat, Chrome, Preview) recha
 
 Wuolah PDF Helper fue diseñado bajo el principio de **cero almacenamiento de secretos**:
 
-* 🔒 **Sin bases de datos de credenciales:** Tu contraseña nunca pasa por el backend. Se introduce directamente en la ventana oficial de Chromium cargada desde los servidores de Wuolah.
-* 🛡️ **Prevención SSRF (Server-Side Request Forgery):** El sistema rechaza rigurosamente esquemas `file://`, `ftp://`, IPs privadas (`10.0.0.0/8`, `192.168.0.0/16`, `127.0.0.1`), resoluciones locales (`localhost`) y cualquier dominio distinto a `wuolah.com`.
-* 📁 **Directorio `data/` en `.gitignore`:** Las cookies, el perfil de Chromium y los archivos temporales se ubican exclusivamente en `./data/`, directorio que está blindado en `.gitignore` para garantizar que **nunca se subirá a GitHub ni se compartirá con terceros**.
-* 🧹 **Sanitización de Path Traversal:** Los nombres de archivo sugeridos por los servidores se limpian mediante expresiones regulares estrictas para evitar ataques de sobreescritura en el sistema de archivos local.
-* ⏳ **TTL y Autolimpieza de Trabajos:** Todos los archivos temporales generados durante el procesamiento se purgan automáticamente pasados 30 minutos (`JOB_TTL_MINUTES`).
+* **Sin bases de datos de credenciales:** Tu contraseña nunca pasa por el backend. Se introduce directamente en la ventana oficial de Chromium cargada desde los servidores de Wuolah.
+* **Prevención SSRF (Server-Side Request Forgery):** El sistema rechaza rigurosamente esquemas `file://`, `ftp://`, IPs privadas (`10.0.0.0/8`, `192.168.0.0/16`, `127.0.0.1`), resoluciones locales (`localhost`) y cualquier dominio distinto a `wuolah.com`.
+* **Directorio `data/` en `.gitignore`:** Las cookies, el perfil de Chromium y los archivos temporales se ubican exclusivamente en `./data/`, directorio que está blindado en `.gitignore` para garantizar que **nunca se subirá a GitHub ni se compartirá con terceros**.
+* **Sanitización de Path Traversal:** Los nombres de archivo sugeridos por los servidores se limpian mediante expresiones regulares estrictas para evitar ataques de sobreescritura en el sistema de archivos local.
+* **TTL y Autolimpieza de Trabajos:** Todos los archivos temporales generados durante el procesamiento se purgan automáticamente pasados 30 minutos (`JOB_TTL_MINUTES`).
 
 ---
 
