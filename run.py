@@ -14,5 +14,5 @@ if sys.platform == "win32":
         pass
 
 if __name__ == "__main__":
-    print("Iniciando Wuolah PDF Helper en http://127.0.0.1:8000 ...")
+    print("Iniciando Academic PDF Helper en http://127.0.0.1:8000 ...")
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)

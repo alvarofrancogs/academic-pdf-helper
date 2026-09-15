@@ -11,7 +11,7 @@ load_dotenv(_env_path)
 
 
 class Settings(BaseModel):
-    PROJECT_NAME: str = "Wuolah PDF Helper"
+    PROJECT_NAME: str = "Academic PDF Helper"
     VERSION: str = "1.0.0"
     API_PREFIX: str = "/api"
     

@@ -13,7 +13,7 @@ FROM mcr.microsoft.com/playwright/python:v1.46.0-jammy
 
 ENV PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
-    TEMP_DIR=/tmp/wuolah-pdf \
+    TEMP_DIR=/tmp/academic-pdf \
     BROWSER_HEADLESS=true \
     PORT=8000
 
@@ -33,7 +33,7 @@ COPY backend /app/backend
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
 # Create temporary working directory
-RUN mkdir -p /tmp/wuolah-pdf && chmod 777 /tmp/wuolah-pdf
+RUN mkdir -p /tmp/academic-pdf && chmod 777 /tmp/academic-pdf
 
 EXPOSE 8000
 

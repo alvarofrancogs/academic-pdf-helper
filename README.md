@@ -163,7 +163,7 @@ Con Docker Desktop no necesitas instalar ni Python ni Node.js en tu equipo.
    docker compose up --build -d
    ```
 3. Vuelve a **Docker Desktop** y entra en la pestaña **Containers**:
-   - Verás el contenedor llamado **`wuolah-pdf-helper`**.
+   - Verás el contenedor llamado **`academic-pdf-helper`**.
    - Haz clic sobre el enlace **`8000:8000`** para abrir la web.
    - En adelante, puedes cerrar todas las terminales y manejar la aplicación directamente desde los controles de Docker Desktop (Play / Stop).
 
@@ -371,7 +371,7 @@ Los tokens JWT de Wuolah tienen un tiempo de expiración estricto de 24 horas. C
 **Sí.** Gracias a la regla en `.gitignore`, tu carpeta personal `data/` (que contiene tu sesión) no se comparte. Tu amigo recibirá el proyecto limpio, abrirá la web en su ordenador, pulsará "Iniciar sesión" y entrará con sus propias credenciales en su máquina.
 
 #### ¿Cómo funciona la aplicación dentro de Docker si no tiene ventana gráfica?
-Al ejecutar la aplicación por primera vez en local con `python run.py`, se genera tu perfil de sesión en `./data/browser_profile`. Como `docker-compose.yml` monta esa carpeta directamente dentro del contenedor (`./data:/tmp/wuolah-pdf`), el Chromium de Docker hereda tu sesión ya iniciada y puede trabajar de forma autónoma en modo *headless* sin requerir interfaz visual.
+Al ejecutar la aplicación por primera vez en local con `python run.py`, se genera tu perfil de sesión en `./data/browser_profile`. Como `docker-compose.yml` monta esa carpeta directamente dentro del contenedor (`./data:/tmp/academic-pdf`), el Chromium de Docker hereda tu sesión ya iniciada y puede trabajar de forma autónoma en modo *headless* sin requerir interfaz visual.
 
 #### ¿Qué hago si el puerto 8000 ya está en uso?
 Puedes cambiar el puerto definiendo `PORT=8080` en tu archivo `.env` o editando la directiva de puertos en `docker-compose.yml` (`- "8080:8000"`).

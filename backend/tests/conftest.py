@@ -18,7 +18,7 @@ def sample_valid_pdf() -> bytes:
         doc = fitz.open()
         for i in range(28):
             page = doc.new_page()
-            page.insert_text((72, 72), f"Wuolah PDF Helper Test Document - Página {i+1}")
+            page.insert_text((72, 72), f"Academic PDF Helper Test Document - Página {i+1}")
         pdf_bytes = doc.tobytes()
         doc.close()
         return pdf_bytes

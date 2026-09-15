@@ -1,1 +1,1 @@
-"""Wuolah PDF Helper Backend Package"""
+"""Academic PDF Helper Backend Package"""

@@ -8,7 +8,7 @@ from pathlib import Path
 
 def main():
     root = Path(__file__).resolve().parent.parent
-    local_temp = Path.home() / "AppData" / "Local" / "Temp" / "wuolah-pdf" / "browser_profile"
+    local_temp = Path.home() / "AppData" / "Local" / "Temp" / "academic-pdf" / "browser_profile"
     docker_data = root / "data" / "browser_profile"
 
     if not local_temp.exists():

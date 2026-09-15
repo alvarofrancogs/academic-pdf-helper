@@ -1,1 +1,1 @@
-"""Tests package for Wuolah PDF Helper."""
+"""Tests package for Academic PDF Helper."""

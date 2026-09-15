@@ -1,21 +1,21 @@
 services:
-  wuolah-pdf-helper:
+  academic-pdf-helper:
     build:
       context: .
       dockerfile: Dockerfile
-    image: wuolah-pdf-helper:latest
-    container_name: wuolah-pdf-helper
+    image: academic-pdf-helper:latest
+    container_name: academic-pdf-helper
     ports:
       - "8000:8000"
     environment:
       - BROWSER_HEADLESS=true
       - MAX_PDF_SIZE_MB=100
       - JOB_TTL_MINUTES=30
-      - TEMP_DIR=/tmp/wuolah-pdf
+      - TEMP_DIR=/tmp/academic-pdf
       - BROWSER_TIMEOUT_SECONDS=150
       - DOWNLOAD_TIMEOUT_SECONDS=120
       - WUOLAH_TOKEN=${WUOLAH_TOKEN:-}
     volumes:
-      - ./data:/tmp/wuolah-pdf
+      - ./data:/tmp/academic-pdf
     restart: unless-stopped
     ipc: host
